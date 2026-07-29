@@ -260,7 +260,7 @@ fetch(`https://klineapi.com/v1/quote?code=600519&key=${API_KEY}`)
 ## 技术栈
 
 - **框架**: FastAPI (Python)
-- **数据源**: 腾讯行情 + 新浪财经 + Baostock
+- **数据源**: 自有数据聚合系统（毫秒级响应）
 - **部署**: Nginx + SSL + systemd
 
 ---
