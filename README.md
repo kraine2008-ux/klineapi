@@ -2,6 +2,7 @@
 
 > 零配置 · 毫秒级响应 · 一站式A股数据接口
 
+[![GitHub Stars](https://img.shields.io/github/stars/kraine2008-ux/klineapi?style=social)](https://github.com/kraine2008-ux/klineapi)
 [![Website](https://img.shields.io/badge/%E5%AE%98%E7%BD%91-klineapi.com-blue)](https://klineapi.com)
 [![API Docs](https://img.shields.io/badge/API%E6%96%87%E6%A1%A3-%E5%9C%A8%E7%BA%BF-green)](https://klineapi.com/docs)
 [![Register](https://img.shields.io/badge/%E5%85%8D%E8%B4%B9%E6%B3%A8%E5%86%8C-%E7%AB%8B%E5%8D%B3%E8%8E%B7%E5%8F%96APIKey-orange)](https://klineapi.com/register)
