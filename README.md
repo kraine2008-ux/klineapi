@@ -1,277 +1,124 @@
-# 📈 KLineAPI - A股实时行情 API
+# KLineAPI - A股实时行情 API
 
-> **上线即用 · 毫秒级响应 · 零维护**  
-> A股实时行情数据接口，免费注册获取 API Key，即开即用
+> 零配置 · 毫秒级响应 · 一站式A股数据接口
 
-🌐 **[https://klineapi.com](https://klineapi.com)** · 📖 [API 文档](https://klineapi.com/docs) · 🚀 [免费注册](https://klineapi.com/register)
+[![Website](https://img.shields.io/badge/%E5%AE%98%E7%BD%91-klineapi.com-blue)](https://klineapi.com)
+[![API Docs](https://img.shields.io/badge/API%E6%96%87%E6%A1%A3-%E5%9C%A8%E7%BA%BF-green)](https://klineapi.com/docs)
+[![Register](https://img.shields.io/badge/%E5%85%8D%E8%B4%B9%E6%B3%A8%E5%86%8C-%E7%AB%8B%E5%8D%B3%E8%8E%B7%E5%8F%96APIKey-orange)](https://klineapi.com/register)
+![Python](https://img.shields.io/badge/Python-3.10+-yellow)
+![FastAPI](https://img.shields.io/badge/FastAPI-%E2%9A%A1-teal)
 
----
+**KLineAPI** 提供 A 股实时行情 RESTful API，覆盖实时报价、五档盘口、分时K线、集合竞价、涨停板监控、全市场排行等核心功能。注册即用，毫秒级响应。
 
-## 简介
-
-KLineAPI 提供 A 股实时行情 RESTful API 服务，覆盖实时报价、五档盘口、分时 K 线、集合竞价、涨停监控、市场排行等核心场景。毫秒级响应，稳定可靠。
-
-适合量化交易、自动化策略、行情监控、Web/移动端展示等场景。
-
----
-
-## API 接口
-
-所有接口需要 API Key，可通过 `?key=` 查询参数或 `X-API-Key` HTTP Header 传递。
-
-### 实时行情
-
-```
-GET https://klineapi.com/v1/quote?code=<股票代码>&key=<API Key>
-```
-
-**参数**
-
-| 参数 | 类型 | 必填 | 说明 |
-|------|------|------|------|
-| `code` | string | 是 | 股票代码，如 `600519`、`000001`、`600519.SH` |
-| `key` | string | 是 | API Key |
-
-**示例**
-
-```bash
-curl "https://klineapi.com/v1/quote?code=600519&key=你的APIKey"
-```
-
-**响应**
-
-```json
-{
-  "name": "贵州茅台",
-  "price": 1888.88,
-  "change_pct": 2.35
-}
-```
-
-### 五档盘口
-
-```
-GET https://klineapi.com/v1/orderbook?code=<股票代码>&key=<API Key>
-```
-
-**示例**
-
-```bash
-curl "https://klineapi.com/v1/orderbook?code=600519&key=你的APIKey"
-```
-
-**响应**
-
-```json
-{
-  "code": "600519",
-  "name": "贵州茅台",
-  "price": 1888.88,
-  "bids": [
-    {"price": 1888.00, "volume": 120},
-    {"price": 1887.00, "volume": 85},
-    ...
-  ],
-  "asks": [
-    {"price": 1889.00, "volume": 60},
-    {"price": 1890.00, "volume": 45},
-    ...
-  ]
-}
-```
-
-### 分时K线
-
-```
-GET https://klineapi.com/v1/intraday?code=<股票代码>&key=<API Key>
-```
-
-获取当日 1 分钟分时 K 线数据。
-
-```bash
-curl "https://klineapi.com/v1/intraday?code=600519&key=你的APIKey"
-```
-
-### 集合竞价
-
-```
-GET https://klineapi.com/v1/auction?code=<股票代码>&key=<API Key>
-```
-
-获取开盘（9:15-9:25）和收盘（14:57-15:00）集合竞价数据。
-
-```bash
-curl "https://klineapi.com/v1/auction?code=600519&key=你的APIKey"
-```
-
-### 涨停池
-
-```
-GET https://klineapi.com/v1/limit-up?key=<API Key>
-```
-
-获取当前所有涨停股票列表，包含封单量、换手率、成交额等信息。
-
-```bash
-curl "https://klineapi.com/v1/limit-up?key=你的APIKey"
-```
-
-**响应**
-
-```json
-{
-  "count": 35,
-  "stocks": [
-    {"code": "002952", "name": "亚世光电", "changepercent": 10.03, "封单": 2.5},
-    {"code": "603863", "name": "松炀资源", "changepercent": 10.01, "封单": 1.8}
-  ]
-}
-```
-
-### 全市场排行
-
-```
-GET https://klineapi.com/v1/board?key=<API Key>
-```
-
-获取全市场涨幅排行（前 1000 只），按涨幅降序排列。
-
-```bash
-curl "https://klineapi.com/v1/board?key=你的APIKey"
-```
-
-### 大盘指数
-
-```
-GET https://klineapi.com/v1/market?key=<API Key>
-```
-
-获取主要指数实时数据：
-
-| 指数 | 代码 |
-|------|------|
-| 上证指数 | 000001 |
-| 深证成指 | 399001 |
-| 创业板指 | 399006 |
-| 沪深300 | 000300 |
-| 科创50 | 000688 |
-
-```bash
-curl "https://klineapi.com/v1/market?key=你的APIKey"
-```
-
-### 注册获取 API Key
-
-```
-GET https://klineapi.com/v1/register
-```
-
-无需参数，直接返回一个免费 API Key。
-
-```bash
-curl "https://klineapi.com/v1/register"
-```
-
-**响应**
-
-```json
-{
-  "api_key": "kline_a1b2c3d4e5f6...",
-  "tier": "free"
-}
-```
+- Website: https://klineapi.com
+- API Docs: https://klineapi.com/docs
+- Free Register: https://klineapi.com/register
+- CLI Tool: https://github.com/kraine2008-ux/klineapi-cli
 
 ---
 
-## 快速开始
+## Quick Start
 
-### 1. 获取 API Key
+### 1. Get API Key
 
 ```bash
+# One-liner register
 curl https://klineapi.com/v1/register
+
+# Or register at: https://klineapi.com/register
 ```
 
-或访问 [klineapi.com/register](https://klineapi.com/register) 注册账号。
-
-### 2. 调用 API
+### 2. Call API
 
 ```bash
-# 查询茅台实时行情
-curl "https://klineapi.com/v1/quote?code=600519&key=你的APIKey"
+# Real-time quote
+curl "https://klineapi.com/v1/quote?code=600519&key=YOUR_API_KEY"
 
-# 获取涨停池
-curl "https://klineapi.com/v1/limit-up?key=你的APIKey"
+# Today's limit-up stocks
+curl "https://klineapi.com/v1/limit-up?key=YOUR_API_KEY"
 
-# 查看大盘指数
-curl "https://klineapi.com/v1/market?key=你的APIKey"
+# Market indices
+curl "https://klineapi.com/v1/market?key=YOUR_API_KEY"
 ```
 
 ### Python
 
 ```python
 import httpx
-
-API_KEY = "你的APIKey"
-
-# 实时行情
-resp = httpx.get("https://klineapi.com/v1/quote", params={
-    "code": "600519", "key": API_KEY
-})
-print(resp.json())
-
-# 涨停池
-resp = httpx.get("https://klineapi.com/v1/limit-up", params={"key": API_KEY})
-print(resp.json())
+r = httpx.get("https://klineapi.com/v1/quote",
+    params={"code": "600519", "key": "YOUR_API_KEY"})
+print(r.json())
+# {'code': '600519', 'name': '贵州茅台', 'price': 1888.00, ...}
 ```
 
-### JavaScript
+### CLI (pip install)
 
-```javascript
-const API_KEY = '你的APIKey';
-
-// 实时行情
-fetch(`https://klineapi.com/v1/quote?code=600519&key=${API_KEY}`)
-  .then(r => r.json())
-  .then(console.log);
+```bash
+pip install klineapi-cli
+klineapi quote 600519
+klineapi limit-up
+klineapi market
 ```
 
 ---
 
-## 定价
+## API Endpoints
 
-| 套餐 | 免费版 | 专业版 | 企业版 |
-|------|--------|--------|--------|
-| **价格** | **¥0** | **¥49/月** | **¥299/月** |
-| 每日调用 | 100次 | 10,000次 | 100,000次 |
-| 速率限制 | 10次/分 | 50次/分 | 200次/分 |
-| 实时行情 | ✅ | ✅ | ✅ |
-| 涨停池 | ✅ | ✅ | ✅ |
-| 五档盘口 | ❌ | ✅ | ✅ |
-| 集合竞价 | ❌ | ✅ | ✅ |
-| 分时K线 | ❌ | ✅ | ✅ |
-| 全市场排行 | ❌ | ✅ | ✅ |
-| 大盘指数 | ❌ | ✅ | ✅ |
-| 专属支持 | ❌ | ❌ | ✅ |
-
-[立即升级 →](https://klineapi.com/dashboard)
+| Endpoint | Description |
+|----------|-------------|
+| `GET /v1/quote` | Real-time quote (price, change, volume) |
+| `GET /v1/orderbook` | Level-2 order book (bid/ask 5) |
+| `GET /v1/intraday` | 1-min intraday K-line data |
+| `GET /v1/auction` | Call auction (open/close) |
+| `GET /v1/limit-up` | Limit-up stocks monitor |
+| `GET /v1/board` | Full market ranking by % change |
+| `GET /v1/market` | Major indices (SH/SZ/ChiNext) |
+| `GET /v1/register` | Get an API key instantly |
 
 ---
 
-## 技术栈
+## Features
 
-- **框架**: FastAPI (Python)
-- **数据源**: 自有数据聚合系统（毫秒级响应）
-- **部署**: Nginx + SSL + systemd
+- **Zero config** - No software installation, just curl
+- **Millisecond response** - Real-time aggregated data
+- **Full coverage** - Shanghai, Shenzhen, Beijing, STAR, ChiNext
+- **Smart limit-up pool** - Auto-filter by board type, exclude ST stocks
+- **Call auction** - Open (9:15-9:25) and close (14:57-15:00) data
 
 ---
 
-## 关于
+## Pricing
 
-KLineAPI 致力于为开发者提供简单、稳定、低延迟的 A 股实时行情数据服务。
+| Plan | Free | Pro | Enterprise |
+|------|------|-----|------------|
+| **Price** | **$0** | **$7/month** | **$42/month** |
+| Daily calls | 100 | 10,000 | 100,000 |
+| Rate limit | 10/sec | 50/sec | 200/sec |
+| All endpoints | Yes | Yes | Yes |
+| Priority support | - | - | Yes |
 
-- 🌐 官网: [https://klineapi.com](https://klineapi.com)
-- 📖 文档: [https://klineapi.com/docs](https://klineapi.com/docs)
-- 🚀 注册: [https://klineapi.com/register](https://klineapi.com/register)
-- 🐛 Issues: [GitHub Issues](https://github.com/kraine2008-ux/klineapi/issues)
+[Upgrade Plan](https://klineapi.com/payment/plans)
 
-**如果这个项目对你有帮助，请点 ⭐ Star 支持！**
+---
+
+## Why KLineAPI?
+
+| Feature | KLineAPI | Paid Terminals | Self-built |
+|---------|----------|---------------|------------|
+| Setup time | 1 minute | Days | Days/weeks |
+| Latency | Millisecond | Millisecond | Seconds |
+| Cost | Free tier | $$$ | Server + dev |
+| Reliability | High | High | Low |
+| Code needed | 1 curl | - | 100s of lines |
+
+---
+
+## Contributing
+
+- Report bugs: [New Issue](https://github.com/kraine2008-ux/klineapi/issues/new)
+- Feature requests: [New Issue](https://github.com/kraine2008-ux/klineapi/issues/new)
+- PRs welcome!
+
+---
+
+**If you find this useful, please give it a Star!** :star:
