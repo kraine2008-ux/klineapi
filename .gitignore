@@ -1,7 +1,10 @@
-﻿__pycache__/
+__pycache__/
 *.pyc
-kline.db
+.env
+*.db
 .secret
 server.log
 server.err
 qr.svg
+.venv/
+venv/
