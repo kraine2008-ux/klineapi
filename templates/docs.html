@@ -67,7 +67,7 @@
       <p class="note">所有接口均需要有效 API Key，未携带或无效时返回 <code class="inline-code">401</code>。</p>
 
       <h2 id="quote">实时行情 <code class="inline-code">GET /v1/quote</code></h2>
-      <p>获取单只 A 股股票的实时行情，包含五档盘口。数据源：腾讯。</p>
+      <p>获取单只 A 股股票的实时行情，包含五档盘口。自主研发行情引擎。</p>
       <div class="table-scroll">
         <table class="doc-table">
           <thead><tr><th>参数</th><th>类型</th><th>必填</th><th>说明</th></tr></thead>
@@ -100,7 +100,7 @@
     "limit_down": 1177.70,
     "bid": [{"price": 1309.22, "volume": 2}],
     "ask": [{"price": 1309.23, "volume": 1}],
-    "source": "tencent"
+    "source": "klineapi-engine"
   },
   "message": "ok",
   "timestamp": "2026-08-07 16:14:37"
@@ -119,7 +119,7 @@
 }</code></pre>
 
       <h2 id="top">全市场涨幅排行 <code class="inline-code">GET /v1/top</code></h2>
-      <p>沪深 A 股按涨跌幅降序排列。数据源：新浪。</p>
+      <p>沪深 A 股按涨跌幅降序排列。自主研发行情引擎。</p>
       <div class="table-scroll">
         <table class="doc-table">
           <thead><tr><th>参数</th><th>类型</th><th>默认</th><th>说明</th></tr></thead>

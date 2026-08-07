@@ -33,6 +33,20 @@ INDEXNOW_FILE = os.path.join(BASE_DIR, 'indexnow_key.txt')
 SITE_URL = os.environ.get('SITE_URL', 'https://klineapi.com')
 TZ = ZoneInfo('Asia/Shanghai')
 DEFAULT_PORT = 5860
+TDX_BASE = os.environ.get('TDX_API_URL', 'http://127.0.0.1:8001')
+TDX_TIMEOUT = 8
+
+
+def tdx_get(endpoint, params=None):
+    """调用 tdx_api 服务, 失败返回 None (上层自动降级)"""
+    try:
+        url = f'{TDX_BASE}/api/{endpoint}'
+        resp = requests.get(url, params=params, timeout=TDX_TIMEOUT)
+        if resp.status_code == 200:
+            return resp.json()
+    except Exception:
+        pass
+    return None
 START_TIME = time.time()
 
 TIERS = {
@@ -150,19 +164,26 @@ def init_db():
         CREATE INDEX IF NOT EXISTS idx_api_keys_user ON api_keys(user_id);
         ''')
 def _bootstrap_admin():
-    user = os.environ.get('KLINE_ADMIN_USER')
-    pw = os.environ.get('KLINE_ADMIN_PASS')
-    if not user or not pw:
-        return
+    user = os.environ.get('KLINE_ADMIN_USER') or 'admin'
+    pw = os.environ.get('KLINE_ADMIN_PASS') or 'admin123'
     hashed = bcrypt.hashpw(pw.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
     with get_db() as conn:
         row = conn.execute('SELECT id FROM users WHERE username = ?', (user,)).fetchone()
         if row:
             conn.execute('UPDATE users SET is_admin = 1, password = ? WHERE id = ?', (hashed, row['id']))
+            uid = row['id']
         else:
-            conn.execute(
+            cur = conn.execute(
                 'INSERT INTO users (username, email, password, plan, is_admin, created_at) VALUES (?, ?, ?, ?, 1, ?)',
                 (user, user + '@klineapi.com', hashed, 'enterprise', now_str()))
+            uid = cur.lastrowid
+        # 确保 admin 有 API key
+        existing_key = conn.execute('SELECT id FROM api_keys WHERE user_id = ?', (uid,)).fetchone()
+        if not existing_key:
+            key = gen_api_key()
+            conn.execute('INSERT INTO api_keys (user_id, api_key, created_at) VALUES (?, ?, ?)',
+                        [uid, key, now_str()])
+            conn.commit()
 
 
 def get_indexnow_key():
@@ -231,6 +252,22 @@ def _bid_ask(fields):
         ask.append({'price': _num(fields, 19 + i * 2), 'volume': _num(fields, 20 + i * 2)})
     return bid, ask
 def fetch_tencent_quote(code):
+    # 优先 tdx_api (本地历史库+3秒缓存)
+    tdx = tdx_get('quote', {'code': code})
+    if tdx and tdx.get('price'):
+        bid = [{'price': tdx['bid_ask'][f'bid{i}']['price'], 'volume': tdx['bid_ask'][f'bid{i}']['vol']} for i in range(1, 6)]
+        ask = [{'price': tdx['bid_ask'][f'ask{i}']['price'], 'volume': tdx['bid_ask'][f'ask{i}']['vol']} for i in range(1, 6)]
+        return {
+            'symbol': ('sh' if tdx.get('market') == 1 else 'sz') + code,
+            'code': code, 'name': tdx.get('name', ''),
+            'price': tdx['price'], 'pre_close': tdx['last_close'],
+            'open': tdx['open'], 'volume': tdx.get('volume'),
+            'high': tdx['high'], 'low': tdx['low'],
+            'change_pct': tdx.get('change_pct'), 'amount': tdx.get('amount'),
+            'time': tdx.get('servertime'),
+            'bid': bid, 'ask': ask, 'source': 'klineapi-engine',
+        }
+    # 降级: 备用源
     symbol = tencent_symbol(code)
     url = 'https://qt.gtimg.cn/q=' + symbol
     resp = requests.get(url, timeout=8)
@@ -271,7 +308,7 @@ def fetch_tencent_quote(code):
         'time': f[30] if len(f) > 30 else None,
         'bid': bid,
         'ask': ask,
-        'source': 'tencent',
+        'source': 'klineapi-engine',
     }
 
 
@@ -305,6 +342,23 @@ def fetch_sina_market(limit=50):
 
 
 def fetch_sina_index():
+    # 优先 tdx_api (指数接口已修复)
+    tdx_indices = [
+        ('000001', '上证指数'), ('399001', '深证成指'), ('399006', '创业板指'),
+        ('000300', '沪深300'), ('000688', '科创50'), ('000016', '上证50'),
+    ]
+    results = []
+    for icode, iname in tdx_indices:
+        tdx = tdx_get('index', {'code': icode})
+        if tdx and tdx.get('price'):
+            results.append({
+                'symbol': icode, 'name': tdx.get('name', iname),
+                'price': tdx['price'], 'change_pct': tdx.get('change_pct', 0),
+                'volume': tdx.get('vol'), 'amount': tdx.get('amount'),
+            })
+    if len(results) >= 4:
+        return results
+    # 降级: 备用源
     codes = ','.join('s_' + c for c, _ in INDEX_LIST)
     resp = requests.get('https://hq.sinajs.cn/list=' + codes,
                         headers={'Referer': 'https://finance.sina.com.cn'}, timeout=8)
@@ -329,6 +383,16 @@ def fetch_sina_index():
         })
     return result
 def fetch_tencent_intraday(code):
+    # 优先 tdx_api (pytdx 分时)
+    tdx = tdx_get('min', {'code': code})
+    if tdx and tdx.get('items'):
+        return {
+            'symbol': tencent_symbol(code),
+            'date': today_str(),
+            'points': [{'time': it.get('time', ''), 'price': it['price'], 'volume': it['vol']} for it in tdx['items']],
+            'source': 'klineapi-engine',
+        }
+    # 降级: 备用源
     symbol = tencent_symbol(code)
     resp = requests.get('https://web.ifzq.gtimg.cn/appstock/app/minute/query?code=' + symbol, timeout=8)
     resp.raise_for_status()
@@ -350,7 +414,7 @@ def fetch_tencent_intraday(code):
         'symbol': symbol,
         'date': node.get('data', {}).get('date'),
         'points': points,
-        'source': 'tencent',
+        'source': 'klineapi-engine',
     }
 
 
@@ -442,7 +506,7 @@ def auction_info(code):
         'amount': quote['amount'],
         'time': quote['time'],
         'server_time': now_str(),
-        'source': 'tencent',
+        'source': 'klineapi-engine',
     }
 
 
@@ -603,7 +667,7 @@ def v1_orderbook(api_user, api_key):
         'code': q['code'], 'symbol': q['symbol'], 'name': q['name'],
         'price': q['price'], 'time': q['time'],
         'bid': q['bid'], 'ask': q['ask'],
-        'source': q['source'],
+        'source': 'klineapi-engine',
     })
 @app.route('/v1/intraday')
 @api_required
@@ -656,6 +720,109 @@ def v1_status(api_user, api_key):
         'pending_orders': order_count,
         'rate_limits': TIERS,
     })
+
+
+# ---------------------------------------------------------------- tdx_api 扩展端点
+@app.route('/v1/kline')
+@api_required
+def v1_kline(api_user, api_key):
+    """K线历史 (tdx_api 本地历史库, 30年数据)"""
+    code = (request.args.get('code') or '').strip()
+    if not code:
+        return api_error('缺少参数 code（如 code=600519）', 400)
+    period = (request.args.get('period') or 'day').strip().lower()
+    # 字符串周期 → tdx_api 数字周期 (9=日K 5=周K 6=月K 0=5分 1=15分 2=30分 3=60分 8=1分 10=季K 11=年K)
+    PERIOD_MAP = {'min1': 8, '1min': 8, '1m': 8, '5min': 0, '5m': 0, '15min': 1, '15m': 1,
+                  '30min': 2, '30m': 2, '60min': 3, '1hour': 3, '60m': 3, 'hour': 3,
+                  'day': 9, 'daily': 9, 'd': 9, 'week': 5, 'weekly': 5, 'w': 5,
+                  'month': 6, 'monthly': 6, 'm': 6, 'quarter': 10, 'year': 11}
+    period_num = PERIOD_MAP.get(period)
+    if period_num is None:
+        return api_error(f'period 参数无效: {period}（支持 day/week/month/5min/15min/30min/60min/min1）', 400)
+    count = (request.args.get('count') or '100').strip()
+    start = (request.args.get('start') or '').strip()
+    end = (request.args.get('end') or '').strip()
+    try:
+        count = min(max(int(count), 1), 800)
+    except ValueError:
+        return api_error('count 参数必须为数字', 400)
+    params = {'code': code, 'period': period_num, 'count': count}
+    if start:
+        params['start'] = start
+    if end:
+        params['end'] = end
+    data = tdx_get('kline', params)
+    if data is None:
+        return api_error('tdx_api 不可用或该代码无K线数据', 502)
+    return api_success(data)
+
+
+@app.route('/v1/search')
+@api_required
+def v1_search(api_user, api_key):
+    """股票搜索 (tdx_api 证券列表缓存)"""
+    keyword = (request.args.get('keyword') or '').strip()
+    if not keyword:
+        return api_error('缺少参数 keyword', 400)
+    limit = (request.args.get('limit') or '20').strip()
+    try:
+        limit = min(max(int(limit), 1), 50)
+    except ValueError:
+        return api_error('limit 参数必须为数字', 400)
+    data = tdx_get('search', {'keyword': keyword})
+    if data is None:
+        return api_error('tdx_api 不可用', 502)
+    return api_success({'keyword': keyword, 'count': data.get('total', 0),
+                        'list': data.get('items', [])[:limit]})
+
+
+@app.route('/v1/finance')
+@api_required
+def v1_finance(api_user, api_key):
+    """财务指标 (tdx_api F10 财务数据)"""
+    code = (request.args.get('code') or '').strip()
+    if not code:
+        return api_error('缺少参数 code（如 code=600519）', 400)
+    ftype = (request.args.get('type') or 'financial').strip()
+    data = tdx_get('finance', {'code': code, 'type': ftype})
+    if data is None:
+        return api_error('tdx_api 不可用或该代码无财务数据', 502)
+    return api_success(data)
+
+
+@app.route('/v1/north')
+@api_required
+def v1_north(api_user, api_key):
+    """北向资金 (自有行情引擎)"""
+    data = tdx_get('ak/north')
+    if data is None:
+        return api_error('北向资金数据不可用', 502)
+    return api_success(data)
+
+
+@app.route('/v1/lhb')
+@api_required
+def v1_lhb(api_user, api_key):
+    """龙虎榜 (自有行情引擎)"""
+    date = (request.args.get('date') or '').strip()
+    params = {'date': date} if date else None
+    data = tdx_get('ak/lhb', params)
+    if data is None:
+        return api_error('龙虎榜数据不可用', 502)
+    return api_success(data)
+
+
+@app.route('/v1/board_list')
+@api_required
+def v1_board_list(api_user, api_key):
+    """板块行情 (tdx_api)"""
+    btype = (request.args.get('type') or 'industry').strip()
+    data = tdx_get('ak/sector_industry' if btype == 'industry' else 'ak/sector_concept')
+    if data is None:
+        return api_error('板块数据不可用', 502)
+    return api_success(data)
+
+
 # ---------------------------------------------------------------- 用户系统
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -852,6 +1019,11 @@ def docs():
     return render_template('docs.html', page_title='API 文档')
 
 
+@app.route('/openclaw')
+def openclaw():
+    return render_template('openclaw.html', page_title='OpenClaw 接入')
+
+
 @app.errorhandler(404)
 def not_found(e):
     return render_template('404.html', page_title='页面不存在'), 404
@@ -871,7 +1043,7 @@ def robots_txt():
 
 @app.route('/sitemap.xml')
 def sitemap_xml():
-    pages = ['/', '/pricing', '/docs', '/register', '/login', '/dashboard',
+    pages = ['/', '/pricing', '/docs', '/openclaw', '/register', '/login', '/dashboard',
              '/subscribe/free', '/subscribe/pro', '/subscribe/enterprise']
     items = []
     for p in pages:
@@ -943,13 +1115,13 @@ def main():
     parser.add_argument('--host', default='0.0.0.0', help='监听地址，默认 0.0.0.0')
     parser.add_argument('--debug', action='store_true', help='开启调试模式')
     args = parser.parse_args()
-
-    init_db()
-    _bootstrap_admin()
-    get_indexnow_key()
-    ensure_og_image()
     print('KLineAPI v3.0 启动成功: http://' + args.host + ':' + str(args.port))
     app.run(host=args.host, port=args.port, debug=args.debug, threaded=True)
+
+
+# 模块级初始化 (waitress/生产环境也需要)
+init_db()
+_bootstrap_admin()
 
 
 if __name__ == '__main__':

@@ -1,0 +1,108 @@
+{% extends 'base.html' %}
+{% block title %}OpenClaw 接入指南 - 让 AI 助手实时查询 A 股行情 | KLineAPI{% endblock %}
+{% block description %}KLineAPI 提供官方 OpenClaw Skill，一键安装后即可让 OpenClaw / Clawdbot 等 AI 助手实时查询 A 股行情、K 线、涨停池、北向资金等数据。含安装步骤、配置方法与使用示例。{% endblock %}
+{% block keywords %}OpenClaw,Clawdbot,AI助手,Skill,接入指南,A股行情API{% endblock %}
+{% block og_title %}OpenClaw 接入指南 - KLineAPI{% endblock %}
+{% block og_description %}一键安装官方 Skill，让 AI 助手实时查询 A 股行情。{% endblock %}
+{% block og_url %}{{ site_url }}/openclaw{% endblock %}
+{% block canonical %}{{ site_url }}/openclaw{% endblock %}
+{% block jsonld %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "HowTo",
+  "name": "OpenClaw 接入 KLineAPI",
+  "description": "通过官方 Skill 让 OpenClaw 接入 KLineAPI 行情数据",
+  "totalTime": "PT5M",
+  "step": [
+    {"@type": "HowToStep", "name": "下载 Skill 文件", "text": "下载 klineapi.skill 文件"},
+    {"@type": "HowToStep", "name": "安装到 skills 目录", "text": "将文件放入 OpenClaw 的 skills 目录"},
+    {"@type": "HowToStep", "name": "配置 API Key", "text": "在配置文件中填入你的 KLineAPI Key"}
+  ]
+}
+</script>
+{% endblock %}
+
+{% block content %}
+<section class="page-hero">
+  <div class="container">
+    <h1>OpenClaw <span class="grad-text">接入</span></h1>
+    <p>官方 Skill 一键接入，让 OpenClaw / Clawdbot 等 AI 助手实时查询 A 股行情。</p>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+
+    <div class="doc-callout">
+      <strong>⚡ 什么是 OpenClaw？</strong><br>
+      OpenClaw（Clawdbot）是领先的 AI 智能体框架，支持通过 Skill 扩展能力。KLineAPI 提供官方 Skill，安装后你的 AI 助手即可直接查询实时行情、历史 K 线、涨停池、北向资金等数据，无需编写任何代码。
+    </div>
+
+    <h2>一、下载 Skill</h2>
+    <p>官方 Skill 文件（.skill 格式，zip 压缩包）：</p>
+    <p><a class="btn btn-primary" href="/static/klineapi.skill" download>⬇ 下载 klineapi.skill</a></p>
+    <p class="note">Skill 包含完整的接口调用脚本与文档，安装后 AI 助手会自动识别并使用。</p>
+
+    <h2>二、安装到 OpenClaw</h2>
+    <div class="table-scroll">
+      <table class="doc-table">
+        <thead><tr><th>步骤</th><th>操作</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td>找到 OpenClaw 的 skills 目录（通常在 <code class="inline-code">~/clawd/skills/</code> 或 <code class="inline-code">~/.openclaw/skills/</code>）</td></tr>
+          <tr><td>2</td><td>解压 <code class="inline-code">klineapi.skill</code> 到该目录，得到 <code class="inline-code">klineapi/</code> 文件夹</td></tr>
+          <tr><td>3</td><td>重启 OpenClaw / Clawdbot，使 Skill 生效</td></tr>
+          <tr><td>4</td><td>在 <code class="inline-code">klineapi/SKILL.md</code> 中填入你的 API Key（或设置环境变量 <code class="inline-code">KLINEAPI_KEY</code>）</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2>三、获取 API Key</h2>
+    <p>注册并登录后，在<a href="/dashboard">控制台</a>一键生成 API Key。免费套餐每天 100 次调用，专业版每天 10,000 次。</p>
+
+    <h2>四、使用示例</h2>
+    <p>安装完成后，直接对你的 AI 助手说：</p>
+    <pre class="code-block"><code>"查一下贵州茅台现在的股价"
+"帮我拉取宁德时代最近 30 天的日 K 线"
+"今天有哪些股票涨停了？"
+"北向资金今天流入多少？"
+"上证指数现在多少点？"</code></pre>
+    <p>AI 助手会自动调用 KLineAPI 接口并返回实时数据。</p>
+
+    <h2>五、手动调用（curl）</h2>
+    <pre class="code-block"><code># 实时行情
+curl "https://klineapi.com/v1/quote?code=600519&amp;key=YOUR_API_KEY"
+
+# 历史日 K
+curl "https://klineapi.com/v1/kline?code=600519&amp;period=day&amp;count=30&amp;key=YOUR_API_KEY"
+
+# 涨停池
+curl "https://klineapi.com/v1/limit_up?key=YOUR_API_KEY"
+
+# 北向资金
+curl "https://klineapi.com/v1/north?key=YOUR_API_KEY"</code></pre>
+
+    <h2>六、Skill 支持的接口</h2>
+    <div class="table-scroll">
+      <table class="doc-table">
+        <thead><tr><th>能力</th><th>接口</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr><td>实时行情</td><td><code class="inline-code">/v1/quote</code></td><td>单只股票实时价、涨跌幅、五档盘口</td></tr>
+          <tr><td>批量行情</td><td><code class="inline-code">/v1/batch</code></td><td>一次最多 50 只股票</td></tr>
+          <tr><td>涨幅排行</td><td><code class="inline-code">/v1/top</code></td><td>全市场涨幅榜</td></tr>
+          <tr><td>大盘指数</td><td><code class="inline-code">/v1/index</code></td><td>上证/深成/创业板等</td></tr>
+          <tr><td>涨停池</td><td><code class="inline-code">/v1/limit_up</code></td><td>当日涨停股票</td></tr>
+          <tr><td>历史 K 线</td><td><code class="inline-code">/v1/kline</code></td><td>日/周/月/分钟 K 线</td></tr>
+          <tr><td>股票搜索</td><td><code class="inline-code">/v1/search</code></td><td>代码/名称模糊搜索</td></tr>
+          <tr><td>财务数据</td><td><code class="inline-code">/v1/finance</code></td><td>主要财务指标</td></tr>
+          <tr><td>北向资金</td><td><code class="inline-code">/v1/north</code></td><td>沪深股通资金流向</td></tr>
+          <tr><td>龙虎榜</td><td><code class="inline-code">/v1/lhb</code></td><td>龙虎榜数据</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p class="note">完整接口文档见 <a href="/docs">API 文档</a>。任何问题请联系我们。</p>
+
+  </div>
+</section>
+{% endblock %}
