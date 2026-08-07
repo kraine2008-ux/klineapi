@@ -1,0 +1,111 @@
+{% extends 'base.html' %}
+{% block title %}KLineAPI 套餐价格 - 免费 / 专业 / 企业 API 行情接口{% endblock %}
+{% block description %}KLineAPI 提供三档行情 API 套餐：免费版 0 元/永久、专业版 49 元/月、企业版 299 元/月。按日与分钟限流配额清晰透明，支持支付宝扫码支付。{% endblock %}
+{% block keywords %}行情API价格,股票接口套餐,API限流配额,免费行情接口,专业版API,企业版API{% endblock %}
+{% block og_title %}KLineAPI 套餐价格 - 免费 / 专业 / 企业{% endblock %}
+{% block og_description %}免费版 0 元/永久，专业版 49 元/月，企业版 299 元/月。配额清晰透明，按需升级。{% endblock %}
+{% block og_url %}{{ site_url }}/pricing{% endblock %}
+{% block canonical %}{{ site_url }}/pricing{% endblock %}
+{% block jsonld %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Product",
+  "name": "KLineAPI 行情 API 套餐",
+  "description": "A股实时行情 API 订阅套餐，包含免费版、专业版与企业版。",
+  "brand": {"@type": "Brand", "name": "KLineAPI"},
+  "offers": [
+    {"@type": "Offer", "name": "免费版", "price": "0", "priceCurrency": "CNY", "description": "100 次/日，10 次/分"},
+    {"@type": "Offer", "name": "专业版", "price": "49", "priceCurrency": "CNY", "description": "10000 次/日，100 次/分"},
+    {"@type": "Offer", "name": "企业版", "price": "299", "priceCurrency": "CNY", "description": "100000 次/日，不限速"}
+  ]
+}
+</script>
+{% endblock %}
+
+{% block content %}
+<section class="page-hero">
+  <div class="container">
+    <h1>选择适合你的<span class="grad-text">套餐</span></h1>
+    <p>所有套餐均包含全部数据接口，仅限流配额不同。随时可升级，无隐藏费用。</p>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <div class="pricing-grid pricing-grid-full">
+      {% for key, tier in tiers.items() %}
+      <article class="price-card {{ 'price-card-hot' if key == 'pro' else '' }}">
+        {% if key == 'pro' %}<div class="price-tag">最受欢迎</div>{% endif %}
+        <h3>{{ tier['name'] }}</h3>
+        <p class="price-sub">{{ '适合个人开发者体验全部接口' if key == 'free' else ('适合量化与高频调用场景' if key == 'pro' else '适合企业级大规模数据服务') }}</p>
+        <p class="price-amount"><span class="price-cur">¥</span>{{ tier['price'] }}<span class="price-period">/{{ tier['period'] }}</span></p>
+        <ul class="price-features">
+          <li>
+            <svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true"><path d="M3 8.5l3.2 3L13 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            每日 {{ tier['day'] }} 次调用
+          </li>
+          <li>
+            <svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true"><path d="M3 8.5l3.2 3L13 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            每分钟 {{ tier['min'] if tier['min'] else '不限' }} 次调用
+          </li>
+          <li>
+            <svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true"><path d="M3 8.5l3.2 3L13 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            全部 11 个数据接口
+          </li>
+          <li>
+            <svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true"><path d="M3 8.5l3.2 3L13 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            实时报价 + 五档盘口
+          </li>
+          <li>
+            <svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true"><path d="M3 8.5l3.2 3L13 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            分时K线 + 涨停池
+          </li>
+          <li>
+            <svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true"><path d="M3 8.5l3.2 3L13 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            大盘指数 + 涨幅排行
+          </li>
+        </ul>
+        {% if key == 'free' %}
+        <a class="btn btn-outline" href="/register">免费开通</a>
+        {% else %}
+        <a class="btn {{ 'btn-primary' if key == 'pro' else 'btn-outline' }}" href="/subscribe/{{ key }}">立即订阅</a>
+        {% endif %}
+      </article>
+      {% endfor %}
+    </div>
+
+    <div class="compare-wrap">
+      <h2 class="section-subtitle">配额对比</h2>
+      <div class="table-scroll">
+        <table class="doc-table compare-table">
+          <thead>
+            <tr><th>套餐</th><th>价格</th><th>每日限额</th><th>每分钟限额</th><th>有效期</th><th>适合场景</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>免费版</td><td>¥0</td><td>100 次</td><td>10 次</td><td>永久</td><td>个人学习、原型开发</td></tr>
+            <tr><td>专业版</td><td>¥49/月</td><td>10,000 次</td><td>100 次</td><td>30 天</td><td>量化策略、行情分析</td></tr>
+            <tr><td>企业版</td><td>¥299/月</td><td>100,000 次</td><td>不限</td><td>30 天</td><td>数据服务、生产环境</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="faq">
+      <h2 class="section-subtitle">常见问题</h2>
+      <details>
+        <summary>免费版和付费版接口有区别吗？</summary>
+        <p>没有区别。所有套餐均可调用全部 11 个数据接口，差异仅在每日与每分钟的调用次数上限。</p>
+      </details>
+      <details>
+        <summary>如何付款与激活？</summary>
+        <p>订阅页面生成订单后，通过支付宝扫码支付（演示环境为二维码占位）。支付完成后由管理员手动激活对应套餐。</p>
+      </details>
+      <details>
+        <summary>超过限额会怎样？</summary>
+        <p>返回 HTTP 429 及明确的错误信息。升级套餐或次日自动恢复配额。</p>
+      </details>
+    </div>
+  </div>
+</section>
+{% endblock %}

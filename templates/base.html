@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}KLineAPI - A股实时行情 API 接口平台{% endblock %}</title>
+<meta name="description" content="{% block description %}KLineAPI 提供 A股实时行情、五档盘口、分时K线、涨停池、大盘指数等专业 REST API，毫秒级响应，覆盖沪深北全市场，免费注册即可获取 API Key。{% endblock %}">
+<meta name="keywords" content="{% block keywords %}A股行情API,股票实时行情API,股票数据接口,行情接口,五档盘口,分时K线,涨停池,大盘指数{% endblock %}">
+<meta name="robots" content="index, follow">
+<meta name="author" content="KLineAPI">
+<meta name="baidu-site-verification" content="{% block baidu_verify %}code-klineapi2026{% endblock %}">
+<meta property="og:site_name" content="KLineAPI">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:type" content="{% block og_type %}website{% endblock %}">
+<meta property="og:title" content="{% block og_title %}KLineAPI - A股实时行情 API 接口平台{% endblock %}">
+<meta property="og:description" content="{% block og_description %}毫秒级 A股实时行情 API：实时报价、五档盘口、分时K线、涨停池、大盘指数。免费注册，立即可用。{% endblock %}">
+<meta property="og:url" content="{% block og_url %}{{ site_url }}{% endblock %}">
+<meta property="og:image" content="{{ site_url }}/static/og-cover.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="{% block twitter_title %}KLineAPI - A股实时行情 API 接口平台{% endblock %}">
+<meta name="twitter:description" content="{% block twitter_description %}毫秒级 A股实时行情 API：实时报价、五档盘口、分时K线、涨停池、大盘指数。{% endblock %}">
+<meta name="twitter:image" content="{{ site_url }}/static/og-cover.png">
+<link rel="canonical" href="{% block canonical %}{{ site_url }}{% endblock %}">
+<link rel="icon" href="{{ site_url }}/static/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/static/style.css">
+<script defer src="/static/main.js"></script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "name": "KLineAPI",
+      "url": "{{ site_url }}",
+      "logo": "{{ site_url }}/static/favicon.svg",
+      "description": "A股实时行情 API 服务平台，提供实时报价、五档盘口、分时K线、涨停池、大盘指数等专业数据接口。",
+      "sameAs": []
+    },
+    {
+      "@type": "WebSite",
+      "name": "KLineAPI",
+      "url": "{{ site_url }}",
+      "inLanguage": "zh-CN",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": "{{ site_url }}/docs?q={search_term_string}",
+        "query-input": "required name=search_term_string"
+      }
+    }
+  ]
+}
+</script>
+{% block jsonld %}{% endblock %}
+</head>
+<body>
+<header class="site-header">
+  <div class="container header-inner">
+    <a class="brand" href="/" aria-label="KLineAPI 首页">
+      <svg class="brand-mark" viewBox="0 0 32 32" width="30" height="30" aria-hidden="true">
+        <rect x="2" y="2" width="28" height="28" rx="7" fill="#0d1524" stroke="#f6c453" stroke-width="1.6"/>
+        <path d="M7 21 L13 14 L17 17 L25 9" fill="none" stroke="#35d0f2" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="25" cy="9" r="2.2" fill="#f6c453"/>
+      </svg>
+      <span class="brand-text">KLine<span>API</span></span>
+    </a>
+    <nav class="site-nav" id="siteNav" aria-label="主导航">
+      <a href="/">首页</a>
+      <a href="/pricing">套餐</a>
+      <a href="/docs">API 文档</a>
+      {% if current_user %}
+      <a href="/dashboard">控制台</a>
+      {% endif %}
+    </nav>
+    <div class="header-actions">
+      {% if current_user %}
+      <span class="nav-user">{{ current_user['username'] }}</span>
+      <a class="btn btn-sm btn-primary" href="/dashboard">控制台</a>
+      <form method="post" action="/logout" class="inline-form">
+        <button class="btn btn-sm btn-ghost" type="submit">退出</button>
+      </form>
+      {% else %}
+      <a class="btn btn-sm btn-ghost" href="/login">登录</a>
+      <a class="btn btn-sm btn-primary" href="/register">免费注册</a>
+      {% endif %}
+      <button class="nav-toggle" id="navToggle" aria-label="打开菜单" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+</header>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+<div class="flash-wrap container">
+  {% for category, message in messages %}
+  <div class="flash flash-{{ category }}">{{ message }}</div>
+  {% endfor %}
+</div>
+{% endif %}
+{% endwith %}
+
+<main>
+{% block content %}{% endblock %}
+</main>
+
+<footer class="site-footer">
+  <div class="container footer-inner">
+    <div class="footer-col">
+      <div class="brand footer-brand">
+        <svg class="brand-mark" viewBox="0 0 32 32" width="24" height="24" aria-hidden="true">
+          <rect x="2" y="2" width="28" height="28" rx="7" fill="#0d1524" stroke="#f6c453" stroke-width="1.6"/>
+          <path d="M7 21 L13 14 L17 17 L25 9" fill="none" stroke="#35d0f2" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="25" cy="9" r="2.2" fill="#f6c453"/>
+        </svg>
+        <span class="brand-text">KLine<span>API</span></span>
+      </div>
+      <p class="footer-desc">面向开发者的 A股实时行情 API 服务平台，毫秒级响应，覆盖沪深北全市场。</p>
+    </div>
+    <div class="footer-col">
+      <h3>产品</h3>
+      <a href="/pricing">套餐价格</a>
+      <a href="/docs">API 文档</a>
+      <a href="/register">免费注册</a>
+      <a href="/dashboard">开发者控制台</a>
+    </div>
+    <div class="footer-col">
+      <h3>数据接口</h3>
+      <a href="/docs#quote">实时行情</a>
+      <a href="/docs#top">涨幅排行</a>
+      <a href="/docs#limit_up">涨停池</a>
+      <a href="/docs#intraday">分时K线</a>
+    </div>
+    <div class="footer-col">
+      <h3>服务状态</h3>
+      <p class="status-line"><span class="status-dot"></span>全部接口运行正常</p>
+      <p class="footer-time">服务器时间（Asia/Shanghai）</p>
+      <p class="footer-time" id="footerClock">{{ now_str }}</p>
+    </div>
+  </div>
+  <div class="container footer-bottom">
+    <p>© 2026 KLineAPI · klineapi.com · 数据来源于腾讯/新浪公开行情，仅供开发测试使用。</p>
+  </div>
+</footer>
+</body>
+</html>

@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+{% block title %}订阅{{ tiers[tier]['name'] }} - 支付页 | KLineAPI{% endblock %}
+{% block description %}订阅 KLineAPI {{ tiers[tier]['name'] }}，支付宝扫码支付后由管理员激活套餐，配额即时生效。{% endblock %}
+{% block keywords %}套餐订阅,支付宝支付,API套餐{% endblock %}
+{% block og_title %}订阅 KLineAPI {{ tiers[tier]['name'] }}{% endblock %}
+{% block og_description %}支付宝扫码支付 {{ tiers[tier]['name'] }}，支付后管理员激活套餐。{% endblock %}
+{% block og_url %}{{ site_url }}/subscribe/{{ tier }}{% endblock %}
+{% block canonical %}{{ site_url }}/subscribe/{{ tier }}{% endblock %}
+{% block robots %}index, nofollow{% endblock %}
+
+{% block content %}
+<section class="section">
+  <div class="container">
+    <div class="subscribe-wrap">
+      <div class="subscribe-card">
+        <h1>订单支付</h1>
+        <div class="order-summary">
+          <div class="order-row"><span>套餐</span><strong>{{ tiers[tier]['name'] }}</strong></div>
+          <div class="order-row"><span>金额</span><strong class="order-price">¥{{ tiers[tier]['price'] }}{% if tier != 'free' %}<small>/月</small>{% endif %}</strong></div>
+          <div class="order-row"><span>每日限额</span><strong>{{ tiers[tier]['day'] }} 次</strong></div>
+          <div class="order-row"><span>每分钟限额</span><strong>{{ tiers[tier]['min'] if tiers[tier]['min'] else '不限' }} 次</strong></div>
+          <div class="order-row"><span>订单状态</span>
+            <span class="plan-badge {{ 'plan-pro' if order['status'] == 'pending' else 'plan-enterprise' }}">
+              {{ '待支付' if order['status'] == 'pending' else '已支付' }}
+            </span>
+          </div>
+          <div class="order-row"><span>订单号</span><code class="inline-code">{{ order['id'] }}</code></div>
+        </div>
+        <div class="qr-area">
+          <p class="qr-title">请使用支付宝扫码支付</p>
+          {% if order['status'] == 'pending' %}
+          <div class="qr-box">
+            <img src="/qr/{{ order['qr_token'] }}" alt="支付宝支付二维码（占位）" width="180" height="180">
+          </div>
+          <p class="qr-hint">演示环境二维码为占位图，支付完成后请联系管理员激活。</p>
+          <form method="post" action="/activate/{{ tier }}">
+            <button class="btn btn-primary btn-block" type="submit">我已完成支付，激活套餐（演示）</button>
+          </form>
+          {% else %}
+          <div class="qr-paid">
+            <svg viewBox="0 0 24 24" width="48" height="48" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="none" stroke="#2ecc8f" stroke-width="2"/><path d="M7.5 12.5l3 3 6-6.5" fill="none" stroke="#2ecc8f" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <p>订单已支付，套餐已激活。</p>
+            <a class="btn btn-outline" href="/dashboard">返回控制台</a>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

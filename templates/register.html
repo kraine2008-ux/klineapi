@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+{% block title %}注册 - 免费获取 A股行情 API Key | KLineAPI{% endblock %}
+{% block description %}注册 KLineAPI 账号，自动生成专属 API Key，免费调用 A股实时行情、五档盘口、分时K线、涨停池等全部接口。{% endblock %}
+{% block keywords %}注册行情API,免费API Key,股票接口注册{% endblock %}
+{% block og_title %}注册 KLineAPI - 免费获取行情 API Key{% endblock %}
+{% block og_description %}注册即自动生成专属 API Key，免费调用全部 A股行情接口。{% endblock %}
+{% block og_url %}{{ site_url }}/register{% endblock %}
+{% block canonical %}{{ site_url }}/register{% endblock %}
+
+{% block content %}
+<section class="auth-section">
+  <div class="container auth-wrap">
+    <div class="auth-card">
+      <h1>创建账号</h1>
+      <p class="auth-sub">注册成功后将自动生成专属 API Key</p>
+      <form method="post" action="/register" class="auth-form">
+        <label for="username">用户名</label>
+        <input id="username" name="username" type="text" placeholder="3-32 位字母、数字或中文" required autocomplete="username">
+        <label for="email">邮箱</label>
+        <input id="email" name="email" type="email" placeholder="you@example.com" required autocomplete="email">
+        <label for="password">密码</label>
+        <input id="password" name="password" type="password" placeholder="至少 6 位" required minlength="6" autocomplete="new-password">
+        <button class="btn btn-primary btn-block" type="submit">注册并获取 API Key</button>
+      </form>
+      <p class="auth-switch">已有账号？<a href="/login">直接登录</a></p>
+    </div>
+    <aside class="auth-side">
+      <h2>注册即可获得</h2>
+      <ul class="auth-benefits">
+        <li>
+          <svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true"><path d="M3 8.5l3.2 3L13 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          自动生成 kline_ 开头的 API Key
+        </li>
+        <li>
+          <svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true"><path d="M3 8.5l3.2 3L13 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          免费版每日 100 次调用额度
+        </li>
+        <li>
+          <svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true"><path d="M3 8.5l3.2 3L13 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          全部 11 个数据接口开放
+        </li>
+        <li>
+          <svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true"><path d="M3 8.5l3.2 3L13 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          控制台用量统计与调用日志
+        </li>
+      </ul>
+    </aside>
+  </div>
+</section>
+{% endblock %}

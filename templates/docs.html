@@ -1,0 +1,216 @@
+{% extends 'base.html' %}
+{% block title %}API 文档 - A股实时行情接口使用指南 | KLineAPI{% endblock %}
+{% block description %}KLineAPI 全部 11 个数据接口文档：实时行情、批量行情、涨幅排行、大盘指数、涨停池、五档盘口、分时K线、集合竞价等，含 curl 示例、参数说明与错误码。{% endblock %}
+{% block keywords %}API文档,行情接口文档,curl示例,实时行情接口,盘口接口,分时接口{% endblock %}
+{% block og_title %}KLineAPI API 文档 - 行情接口使用指南{% endblock %}
+{% block og_description %}全部 11 个数据接口的完整文档：参数说明、curl 示例、返回结构与错误码。{% endblock %}
+{% block og_url %}{{ site_url }}/docs{% endblock %}
+{% block canonical %}{{ site_url }}/docs{% endblock %}
+{% block jsonld %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "APIReference",
+  "name": "KLineAPI 行情接口文档",
+  "description": "A股实时行情 REST API 参考文档",
+  "url": "{{ site_url }}/docs",
+  "provider": {"@type": "Organization", "name": "KLineAPI", "url": "{{ site_url }}"}
+}
+</script>
+{% endblock %}
+
+{% block content %}
+<section class="page-hero">
+  <div class="container">
+    <h1>API <span class="grad-text">文档</span></h1>
+    <p>全部接口基于 HTTPS + JSON，需要 API Key 认证。Base URL：<code class="inline-code">https://klineapi.com</code></p>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container docs-layout">
+    <nav class="docs-toc" aria-label="文档目录">
+      <a href="#quickstart">快速开始</a>
+      <a href="#auth">认证方式</a>
+      <a href="#quote">实时行情 /v1/quote</a>
+      <a href="#batch">批量行情 /v1/batch</a>
+      <a href="#top">涨幅排行 /v1/top</a>
+      <a href="#index">大盘指数 /v1/index</a>
+      <a href="#limit_up">涨停池 /v1/limit_up</a>
+      <a href="#orderbook">五档盘口 /v1/orderbook</a>
+      <a href="#intraday">分时K线 /v1/intraday</a>
+      <a href="#auction">集合竞价 /v1/auction</a>
+      <a href="#market">大盘指数 /v1/market</a>
+      <a href="#board">全市场排行 /v1/board</a>
+      <a href="#status">服务状态 /v1/status</a>
+      <a href="#errors">错误码</a>
+      <a href="#ratelimit">限流说明</a>
+    </nav>
+
+    <div class="docs-content">
+      <h2 id="quickstart">快速开始</h2>
+      <p>注册后自动生成 <code class="inline-code">kline_</code> 开头的 API Key，调用时通过 <code class="inline-code">?key=</code> 参数或 <code class="inline-code">X-API-Key</code> 请求头传递。</p>
+      <pre class="code-block"><code>curl "https://klineapi.com/v1/quote?code=600519&amp;key=YOUR_API_KEY"</code></pre>
+      <pre class="code-block"><code>curl -H "X-API-Key: YOUR_API_KEY" \
+  "https://klineapi.com/v1/index"</code></pre>
+
+      <h2 id="auth">认证方式</h2>
+      <div class="table-scroll">
+        <table class="doc-table">
+          <thead><tr><th>方式</th><th>示例</th><th>说明</th></tr></thead>
+          <tbody>
+            <tr><td>Query 参数</td><td><code>?key=YOUR_API_KEY</code></td><td>所有 GET 请求均可使用</td></tr>
+            <tr><td>请求头</td><td><code>X-API-Key: YOUR_API_KEY</code></td><td>推荐生产环境使用</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="note">所有接口均需要有效 API Key，未携带或无效时返回 <code class="inline-code">401</code>。</p>
+
+      <h2 id="quote">实时行情 <code class="inline-code">GET /v1/quote</code></h2>
+      <p>获取单只 A 股股票的实时行情，包含五档盘口。数据源：腾讯。</p>
+      <div class="table-scroll">
+        <table class="doc-table">
+          <thead><tr><th>参数</th><th>类型</th><th>必填</th><th>说明</th></tr></thead>
+          <tbody>
+            <tr><td>code</td><td>string</td><td>是</td><td>股票代码，如 <code>600519</code>、<code>sh600519</code></td></tr>
+            <tr><td>key</td><td>string</td><td>是</td><td>API Key</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <pre class="code-block"><code>curl "https://klineapi.com/v1/quote?code=600519&amp;key=YOUR_API_KEY"</code></pre>
+      <pre class="code-block"><code>{
+  "code": 0,
+  "data": {
+    "symbol": "sh600519",
+    "code": "600519",
+    "name": "贵州茅台",
+    "price": 1309.22,
+    "pre_close": 1308.55,
+    "open": 1308.66,
+    "high": 1315.28,
+    "low": 1301.00,
+    "change": 0.67,
+    "change_pct": 0.05,
+    "volume": 24976,
+    "amount": 326692,
+    "turnover_rate": 0.20,
+    "pe": 19.79,
+    "pb": 7.03,
+    "limit_up": 1439.41,
+    "limit_down": 1177.70,
+    "bid": [{"price": 1309.22, "volume": 2}],
+    "ask": [{"price": 1309.23, "volume": 1}],
+    "source": "tencent"
+  },
+  "message": "ok",
+  "timestamp": "2026-08-07 16:14:37"
+}</code></pre>
+
+      <h2 id="batch">批量行情 <code class="inline-code">GET /v1/batch</code></h2>
+      <p>一次请求获取多只股票行情，代码用逗号分隔，最多 50 只。</p>
+      <pre class="code-block"><code>curl "https://klineapi.com/v1/batch?codes=600519,000001,300750&amp;key=YOUR_API_KEY"</code></pre>
+      <pre class="code-block"><code>{
+  "code": 0,
+  "data": [
+    {"code": "600519", "data": {"name": "贵州茅台", "price": 1309.22, ...}},
+    {"code": "000001", "data": {"name": "平安银行", "price": 11.20, ...}},
+    {"code": "300750", "data": {"name": "宁德时代", "price": 265.30, ...}}
+  ]
+}</code></pre>
+
+      <h2 id="top">全市场涨幅排行 <code class="inline-code">GET /v1/top</code></h2>
+      <p>沪深 A 股按涨跌幅降序排列。数据源：新浪。</p>
+      <div class="table-scroll">
+        <table class="doc-table">
+          <thead><tr><th>参数</th><th>类型</th><th>默认</th><th>说明</th></tr></thead>
+          <tbody>
+            <tr><td>limit</td><td>int</td><td>50</td><td>返回条数，1-100</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <pre class="code-block"><code>curl "https://klineapi.com/v1/top?limit=20&amp;key=YOUR_API_KEY"</code></pre>
+
+      <h2 id="index">大盘指数 <code class="inline-code">GET /v1/index</code></h2>
+      <p>返回上证指数、深证成指、创业板指、沪深300、科创50 五大指数。</p>
+      <pre class="code-block"><code>curl "https://klineapi.com/v1/index?key=YOUR_API_KEY"</code></pre>
+
+      <h2 id="limit_up">涨停池 <code class="inline-code">GET /v1/limit_up</code></h2>
+      <p>按板块规则过滤的涨停股票池：剔除 ST，主板 ≥9.5%、创业板/科创板 ≥19.5%、北交所 ≥29.5%。</p>
+      <pre class="code-block"><code>curl "https://klineapi.com/v1/limit_up?key=YOUR_API_KEY"</code></pre>
+
+      <h2 id="orderbook">五档盘口 <code class="inline-code">GET /v1/orderbook</code></h2>
+      <p>返回买卖五档报价，复用行情源数据。</p>
+      <pre class="code-block"><code>curl "https://klineapi.com/v1/orderbook?code=600519&amp;key=YOUR_API_KEY"</code></pre>
+      <pre class="code-block"><code>{
+  "code": 0,
+  "data": {
+    "code": "600519",
+    "name": "贵州茅台",
+    "price": 1309.22,
+    "bid": [{"price": 1309.22, "volume": 2}, ...],
+    "ask": [{"price": 1309.23, "volume": 1}, ...]
+  }
+}</code></pre>
+
+      <h2 id="intraday">分时K线 <code class="inline-code">GET /v1/intraday</code></h2>
+      <p>当日分钟级分时数据，返回时间、价格、成交量与成交额。</p>
+      <pre class="code-block"><code>curl "https://klineapi.com/v1/intraday?code=600519&amp;key=YOUR_API_KEY"</code></pre>
+      <pre class="code-block"><code>{
+  "code": 0,
+  "data": {
+    "symbol": "sh600519",
+    "date": "20260807",
+    "points": [
+      {"time": "0930", "price": 1308.66, "volume": 173, "amount": 22639818.0},
+      {"time": "0931", "price": 1302.50, "volume": 630, "amount": 82331189.0}
+    ]
+  }
+}</code></pre>
+
+      <h2 id="auction">集合竞价 <code class="inline-code">GET /v1/auction</code></h2>
+      <p>返回当前集合竞价状态（9:15-9:25 开盘竞价、14:57-15:00 收盘竞价）及匹配价格。</p>
+      <pre class="code-block"><code>curl "https://klineapi.com/v1/auction?code=600519&amp;key=YOUR_API_KEY"</code></pre>
+
+      <h2 id="market">大盘指数别名 <code class="inline-code">GET /v1/market</code></h2>
+      <p><code class="inline-code">/v1/market</code> 与 <code class="inline-code">/v1/index</code> 返回相同数据。</p>
+
+      <h2 id="board">全市场排行别名 <code class="inline-code">GET /v1/board</code></h2>
+      <p><code class="inline-code">/v1/board</code> 与 <code class="inline-code">/v1/top</code> 返回相同数据。</p>
+
+      <h2 id="status">服务状态 <code class="inline-code">GET /v1/status</code></h2>
+      <p>返回服务运行状态、在线时长、用户数、今日调用量等。</p>
+      <pre class="code-block"><code>curl "https://klineapi.com/v1/status?key=YOUR_API_KEY"</code></pre>
+
+      <h2 id="errors">错误码</h2>
+      <div class="table-scroll">
+        <table class="doc-table">
+          <thead><tr><th>HTTP 状态</th><th>code</th><th>说明</th></tr></thead>
+          <tbody>
+            <tr><td>200</td><td>0</td><td>请求成功</td></tr>
+            <tr><td>400</td><td>400</td><td>参数缺失或格式错误</td></tr>
+            <tr><td>401</td><td>401</td><td>缺少或无效的 API Key</td></tr>
+            <tr><td>404</td><td>404</td><td>未找到对应代码的行情</td></tr>
+            <tr><td>429</td><td>429</td><td>超过限流配额</td></tr>
+            <tr><td>500</td><td>500</td><td>服务器内部错误</td></tr>
+            <tr><td>502</td><td>502</td><td>上游行情源暂时不可用</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2 id="ratelimit">限流说明</h2>
+      <p>限流基于内存计数器，按「每日 + 每分钟」双维度统计：</p>
+      <div class="table-scroll">
+        <table class="doc-table">
+          <thead><tr><th>套餐</th><th>每日限额</th><th>每分钟限额</th></tr></thead>
+          <tbody>
+            <tr><td>免费版</td><td>100 次</td><td>10 次</td></tr>
+            <tr><td>专业版</td><td>10,000 次</td><td>100 次</td></tr>
+            <tr><td>企业版</td><td>100,000 次</td><td>不限</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="note">超过限额返回 <code class="inline-code">429</code>，并附带具体限制说明。服务器时间为 Asia/Shanghai 时区。</p>
+    </div>
+  </div>
+</section>
+{% endblock %}

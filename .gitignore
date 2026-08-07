@@ -1,0 +1,7 @@
+﻿__pycache__/
+*.pyc
+kline.db
+.secret
+server.log
+server.err
+qr.svg

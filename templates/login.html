@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% block title %}登录 - KLineAPI 开发者控制台{% endblock %}
+{% block description %}登录 KLineAPI 开发者控制台，管理 API Key、查看用量统计与调用日志。{% endblock %}
+{% block keywords %}登录控制台,API Key管理,调用日志{% endblock %}
+{% block og_title %}登录 KLineAPI 开发者控制台{% endblock %}
+{% block og_description %}登录后管理 API Key、查看用量统计与最近调用日志。{% endblock %}
+{% block og_url %}{{ site_url }}/login{% endblock %}
+{% block canonical %}{{ site_url }}/login{% endblock %}
+
+{% block content %}
+<section class="auth-section">
+  <div class="container auth-wrap auth-wrap-single">
+    <div class="auth-card">
+      <h1>欢迎回来</h1>
+      <p class="auth-sub">登录开发者控制台</p>
+      <form method="post" action="/login" class="auth-form">
+        <label for="username">用户名或邮箱</label>
+        <input id="username" name="username" type="text" placeholder="用户名 / 邮箱" required autocomplete="username">
+        <label for="password">密码</label>
+        <input id="password" name="password" type="password" placeholder="请输入密码" required autocomplete="current-password">
+        <button class="btn btn-primary btn-block" type="submit">登录</button>
+      </form>
+      <p class="auth-switch">还没有账号？<a href="/register">免费注册</a></p>
+    </div>
+  </div>
+</section>
+{% endblock %}

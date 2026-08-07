@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% block title %}500 - 服务器错误 | KLineAPI{% endblock %}
+{% block description %}服务器开小差了，请稍后重试。{% endblock %}
+{% block keywords %}500{% endblock %}
+{% block robots %}noindex, nofollow{% endblock %}
+{% block canonical %}{{ site_url }}{% endblock %}
+
+{% block content %}
+<section class="section error-page">
+  <div class="container">
+    <h1 class="error-code">500</h1>
+    <p class="error-text">服务器内部错误，请稍后重试</p>
+    <a class="btn btn-primary" href="/">返回首页</a>
+  </div>
+</section>
+{% endblock %}

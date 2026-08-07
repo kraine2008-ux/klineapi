@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% block title %}404 - 页面不存在 | KLineAPI{% endblock %}
+{% block description %}您访问的页面不存在。{% endblock %}
+{% block keywords %}404{% endblock %}
+{% block robots %}noindex, nofollow{% endblock %}
+{% block canonical %}{{ site_url }}{% endblock %}
+
+{% block content %}
+<section class="section error-page">
+  <div class="container">
+    <h1 class="error-code">404</h1>
+    <p class="error-text">页面不存在或已被移除</p>
+    <a class="btn btn-primary" href="/">返回首页</a>
+  </div>
+</section>
+{% endblock %}

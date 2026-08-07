@@ -1,0 +1,104 @@
+{% extends 'base.html' %}
+{% block title %}控制台 - API Key 管理与用量统计 | KLineAPI{% endblock %}
+{% block description %}KLineAPI 开发者控制台：查看与管理 API Key、实时用量统计、最近调用日志、套餐信息。{% endblock %}
+{% block keywords %}API Key管理,用量统计,调用日志,开发者控制台{% endblock %}
+{% block og_title %}KLineAPI 开发者控制台{% endblock %}
+{% block og_description %}管理 API Key、查看用量统计与最近调用日志。{% endblock %}
+{% block og_url %}{{ site_url }}/dashboard{% endblock %}
+{% block canonical %}{{ site_url }}/dashboard{% endblock %}
+
+{% block content %}
+<section class="page-hero page-hero-sm">
+  <div class="container dashboard-head">
+    <div>
+      <h1>开发者控制台</h1>
+      <p class="hero-sub">你好，{{ user['username'] }} · 当前套餐 <span class="plan-badge plan-{{ plan }}">{{ tiers[plan]['name'] }}</span>
+        {% if user['plan_expire'] %} · 有效期至 {{ user['plan_expire'] }}{% endif %}
+      </p>
+    </div>
+    <a class="btn btn-primary" href="/pricing">升级套餐</a>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <div class="stat-grid">
+      <div class="stat-card">
+        <p class="stat-label">今日调用</p>
+        <p class="stat-value">{{ today_count }}</p>
+        <p class="stat-hint">DB 日志统计</p>
+      </div>
+      <div class="stat-card">
+        <p class="stat-label">累计调用</p>
+        <p class="stat-value">{{ total_count }}</p>
+        <p class="stat-hint">全部历史请求</p>
+      </div>
+      <div class="stat-card">
+        <p class="stat-label">今日实时计数</p>
+        <p class="stat-value">{{ day_used }} / {{ tiers[plan]['day'] }}</p>
+        <p class="stat-hint">内存限流计数</p>
+      </div>
+      <div class="stat-card">
+        <p class="stat-label">本分钟调用</p>
+        <p class="stat-value">{{ min_used }} / {{ tiers[plan]['min'] if tiers[plan]['min'] else '∞' }}</p>
+        <p class="stat-hint">分钟级限流</p>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <h2>API Key 管理</h2>
+        <form method="post" action="/dashboard/generate_key">
+          <button class="btn btn-sm btn-primary" type="submit">生成新 Key</button>
+        </form>
+      </div>
+      {% if keys %}
+      <div class="key-list">
+        {% for key in keys %}
+        <div class="key-row">
+          <div class="key-cell">
+            <span class="key-text">{{ key['api_key'] }}</span>
+            <span class="key-time">创建于 {{ key['created_at'] }}</span>
+          </div>
+          <div class="key-actions">
+            <button class="btn btn-sm btn-ghost copy-btn" type="button" data-copy="{{ key['api_key'] }}">复制</button>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p class="empty-note">暂无 API Key，点击右上角生成。</p>
+      {% endif %}
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <h2>最近调用日志</h2>
+        <span class="muted-text">最近 20 条</span>
+      </div>
+      {% if recent_logs %}
+      <div class="table-scroll">
+        <table class="doc-table log-table">
+          <thead>
+            <tr><th>时间</th><th>接口</th><th>代码</th><th>状态</th><th>IP</th></tr>
+          </thead>
+          <tbody>
+            {% for log in recent_logs %}
+            <tr>
+              <td>{{ log['created_at'] }}</td>
+              <td><code>{{ log['endpoint'] }}</code></td>
+              <td>{{ log['code'] or '-' }}</td>
+              <td><span class="http-badge http-{{ 'ok' if log['status'] == 200 else 'err' }}">{{ log['status'] }}</span></td>
+              <td>{{ log['ip'] }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <p class="empty-note">暂无调用记录，先去 <a href="/docs">API 文档</a> 试试你的第一个请求。</p>
+      {% endif %}
+    </div>
+  </div>
+</section>
+{% endblock %}
