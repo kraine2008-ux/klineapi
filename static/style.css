@@ -452,7 +452,7 @@ code, pre {
 /* ============ 认证页 ============ */
 .auth-section { padding: 64px 0; }
 .auth-wrap { display: grid; grid-template-columns: 1.05fr 0.95fr; gap: 44px; max-width: 900px; }
-.auth-wrap-single { max-width: 460px; }
+.auth-wrap-single { max-width: 460px; grid-template-columns: 1fr; }
 .auth-card {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -481,6 +481,110 @@ code, pre {
 .auth-benefits { list-style: none; display: flex; flex-direction: column; gap: 14px; }
 .auth-benefits li { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 15px; }
 .auth-benefits svg { color: var(--green); flex: none; }
+
+/* 管理后台 */
+.admin-tabs { margin-bottom: 24px; }
+.admin-tab-group { display: flex; gap: 10px; flex-wrap: wrap; }
+.admin-tab {
+  display: inline-block;
+  padding: 9px 18px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.15s ease;
+}
+.admin-tab:hover { color: var(--text); border-color: var(--border-light); }
+.admin-tab.active { background: var(--cyan); border-color: var(--cyan); color: #06121f; }
+.admin-search { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.admin-search input, .admin-search select {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 14px;
+  padding: 7px 12px;
+  outline: none;
+  font-family: inherit;
+}
+.admin-search input:focus, .admin-search select:focus { border-color: var(--cyan); }
+.badge-admin {
+  display: inline-block;
+  background: rgba(246, 196, 83, 0.15);
+  color: var(--gold);
+  border: 1px solid rgba(246, 196, 83, 0.35);
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 1px 7px;
+  margin-left: 6px;
+  vertical-align: 1px;
+}
+.badge-free {
+  display: inline-block;
+  background: rgba(52, 199, 123, 0.15);
+  color: #34c77b;
+  border: 1px solid rgba(52, 199, 123, 0.35);
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 1px 7px;
+  white-space: nowrap;
+}
+.badge-pro {
+  display: inline-block;
+  background: rgba(100, 149, 237, 0.15);
+  color: #6495ed;
+  border: 1px solid rgba(100, 149, 237, 0.35);
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 1px 7px;
+  white-space: nowrap;
+}
+.order-status {
+  display: inline-block;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 2px 9px;
+}
+.order-status.paid { background: rgba(46, 204, 143, 0.15); color: var(--green); }
+.order-status.pending { background: rgba(246, 196, 83, 0.15); color: var(--gold); }
+.plan-badge {
+  display: inline-block;
+  background: rgba(53, 208, 242, 0.12);
+  color: var(--cyan);
+  border: 1px solid rgba(53, 208, 242, 0.35);
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 3px 12px;
+}
+.empty-cell { text-align: center; color: var(--muted); padding: 26px 0 !important; }
+
+/* 支付页 */
+.pay-type-switch { display: flex; gap: 10px; justify-content: center; margin: 22px 0 4px; }
+.pay-type-btn {
+  display: inline-block;
+  padding: 8px 22px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.15s ease;
+}
+.pay-type-btn:hover { color: var(--text); border-color: var(--border-light); }
+.pay-type-btn.active { background: var(--cyan); border-color: var(--cyan); color: #06121f; }
+.pay-type-btn.disabled { opacity: 0.55; cursor: not-allowed; }
+.pay-type-btn.disabled small { font-weight: 400; font-size: 11px; }
+.error-text { color: var(--red); }
 
 /* ============ 控制台 ============ */
 .stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; margin-bottom: 28px; }

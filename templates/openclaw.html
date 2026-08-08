@@ -39,10 +39,25 @@
       OpenClaw（Clawdbot）是领先的 AI 智能体框架，支持通过 Skill 扩展能力。KLineAPI 提供官方 Skill，安装后你的 AI 助手即可直接查询实时行情、历史 K 线、涨停池、北向资金等数据，无需编写任何代码。
     </div>
 
+    <h2>✨ 零门槛：让 AI 自动安装</h2>
+    <p><strong>在 OpenClaw 对话框中发送以下消息，AI 会自动完成安装和配置：</strong></p>
+    <pre class="code-block" id="autoInstallPrompt">请帮我安装 KLineAPI 行情 Skill：从 https://klineapi.com/static/klineapi.skill 下载 klineapi.skill 文件，解压到 skills 目录（得到 klineapi/ 文件夹），并配置我的 API Key（KLINEAPI_KEY 环境变量或 SKILL.md 中设置）。安装完成后我就能直接查询 A 股实时行情、历史 K 线、涨停池、北向资金等数据。</pre>
+    <p><button class="btn btn-primary" id="copyPromptBtn" type="button">📋 复制这段消息</button></p>
+    <script>
+      document.getElementById('copyPromptBtn').addEventListener('click', function () {
+        var txt = document.getElementById('autoInstallPrompt').innerText;
+        navigator.clipboard.writeText(txt).then(function () {
+          var b = document.getElementById('copyPromptBtn');
+          b.textContent = '✅ 已复制，去 OpenClaw 粘贴发送吧';
+          setTimeout(function () { b.textContent = '📋 复制这段消息'; }, 2500);
+        });
+      });
+    </script>
+
     <h2>一、下载 Skill</h2>
     <p>官方 Skill 文件（.skill 格式，zip 压缩包）：</p>
     <p><a class="btn btn-primary" href="/static/klineapi.skill" download>⬇ 下载 klineapi.skill</a></p>
-    <p class="note">Skill 包含完整的接口调用脚本与文档，安装后 AI 助手会自动识别并使用。</p>
+    <p class="note">Skill 包含完整的接口调用脚本与文档，安装后 AI 助手会自动识别并使用。更多使用示例见 <a href="https://github.com/kraine2008-ux/klineapi" target="_blank" rel="noopener">GitHub 主页</a>。</p>
 
     <h2>二、安装到 OpenClaw</h2>
     <div class="table-scroll">

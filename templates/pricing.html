@@ -38,7 +38,7 @@
       <article class="price-card {{ 'price-card-hot' if key == 'pro' else '' }}">
         {% if key == 'pro' %}<div class="price-tag">最受欢迎</div>{% endif %}
         <h3>{{ tier['name'] }}</h3>
-        <p class="price-sub">{{ '适合个人开发者体验全部接口' if key == 'free' else ('适合量化与高频调用场景' if key == 'pro' else '适合企业级大规模数据服务') }}</p>
+        <p class="price-sub">{{ '适合个人学习与原型开发' if key == 'free' else ('适合量化与高频调用场景' if key == 'pro' else '适合企业级大规模数据服务') }}</p>
         <p class="price-amount"><span class="price-cur">¥</span>{{ tier['price'] }}<span class="price-period">/{{ tier['period'] }}</span></p>
         <ul class="price-features">
           <li>
@@ -49,22 +49,41 @@
             <svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true"><path d="M3 8.5l3.2 3L13 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
             每分钟 {{ tier['min'] if tier['min'] else '不限' }} 次调用
           </li>
+          {% if key == 'free' %}
           <li>
             <svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true"><path d="M3 8.5l3.2 3L13 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            全部 11 个数据接口
+            开放 10 个基础接口
           </li>
           <li>
             <svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true"><path d="M3 8.5l3.2 3L13 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            实时报价 + 五档盘口
+            实时行情（含五档）+ 批量行情
           </li>
           <li>
             <svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true"><path d="M3 8.5l3.2 3L13 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            分时K线 + 涨停池
+            K线历史 + 大盘指数 + 涨幅排行
           </li>
           <li>
             <svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true"><path d="M3 8.5l3.2 3L13 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            大盘指数 + 涨幅排行
+            代码搜索 + 交易日历 + 服务状态
           </li>
+          {% else %}
+          <li>
+            <svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true"><path d="M3 8.5l3.2 3L13 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            开放全部 29 个数据接口
+          </li>
+          <li>
+            <svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true"><path d="M3 8.5l3.2 3L13 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            涨停池 + 跌停池 + 炸板池 + 连板天梯
+          </li>
+          <li>
+            <svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true"><path d="M3 8.5l3.2 3L13 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            板块 + 龙虎榜 + 北向资金 + 财务数据
+          </li>
+          <li>
+            <svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true"><path d="M3 8.5l3.2 3L13 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            ETF/可转债行情 + 分时 + 集合竞价
+          </li>
+          {% endif %}
         </ul>
         {% if key == 'free' %}
         <a class="btn btn-outline" href="/register">免费开通</a>
@@ -80,12 +99,12 @@
       <div class="table-scroll">
         <table class="doc-table compare-table">
           <thead>
-            <tr><th>套餐</th><th>价格</th><th>每日限额</th><th>每分钟限额</th><th>有效期</th><th>适合场景</th></tr>
+            <tr><th>套餐</th><th>价格</th><th>每日限额</th><th>每分钟限额</th><th>可用接口</th><th>有效期</th><th>适合场景</th></tr>
           </thead>
           <tbody>
-            <tr><td>免费版</td><td>¥0</td><td>100 次</td><td>10 次</td><td>永久</td><td>个人学习、原型开发</td></tr>
-            <tr><td>专业版</td><td>¥49/月</td><td>10,000 次</td><td>100 次</td><td>30 天</td><td>量化策略、行情分析</td></tr>
-            <tr><td>企业版</td><td>¥299/月</td><td>100,000 次</td><td>不限</td><td>30 天</td><td>数据服务、生产环境</td></tr>
+            <tr><td>免费版</td><td>¥0</td><td>100 次</td><td>10 次</td><td>10 个基础接口</td><td>永久</td><td>个人学习、原型开发</td></tr>
+            <tr><td>专业版</td><td>¥49/月</td><td>10,000 次</td><td>100 次</td><td>全部 29 个接口</td><td>30 天</td><td>量化策略、行情分析</td></tr>
+            <tr><td>企业版</td><td>¥299/月</td><td>100,000 次</td><td>不限</td><td>全部 29 个接口</td><td>30 天</td><td>数据服务、生产环境</td></tr>
           </tbody>
         </table>
       </div>
@@ -95,11 +114,15 @@
       <h2 class="section-subtitle">常见问题</h2>
       <details>
         <summary>免费版和付费版接口有区别吗？</summary>
-        <p>没有区别。所有套餐均可调用全部 11 个数据接口，差异仅在每日与每分钟的调用次数上限。</p>
+        <p>有区别。平台共 29 个数据接口：<strong>免费版</strong>仅开放 10 个基础接口（实时行情、批量行情、K线历史、大盘指数、涨幅排行、代码搜索、交易日历、服务状态等），调用次数限制为每日 100 次、每分钟 10 次；<strong>专业版/企业版</strong>开放全部 29 个接口（含涨停池、连板天梯、龙虎榜、北向资金、板块、ETF、可转债、财务数据等进阶数据），仅受调用次数限制。完整接口清单见<a href="/docs#endpoints">API 文档 - 接口总览</a>。</p>
+      </details>
+      <details>
+        <summary>免费版调用未开放的接口会怎样？</summary>
+        <p>返回 HTTP 403 及提示信息，告知该接口需专业版或企业版套餐。升级后立即可用，无需更换 API Key。</p>
       </details>
       <details>
         <summary>如何付款与激活？</summary>
-        <p>订阅页面生成订单后，通过支付宝扫码支付（演示环境为二维码占位）。支付完成后由管理员手动激活对应套餐。</p>
+        <p>订阅页面生成订单后，通过支付宝扫码支付，支付成功后系统自动激活对应套餐，无需人工操作。</p>
       </details>
       <details>
         <summary>超过限额会怎样？</summary>

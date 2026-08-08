@@ -1,9 +1,9 @@
 {% extends 'base.html' %}
 {% block title %}API 文档 - A股实时行情接口使用指南 | KLineAPI{% endblock %}
-{% block description %}KLineAPI 全部 11 个数据接口文档：实时行情、批量行情、涨幅排行、大盘指数、涨停池、五档盘口、分时K线、集合竞价等，含 curl 示例、参数说明与错误码。{% endblock %}
-{% block keywords %}API文档,行情接口文档,curl示例,实时行情接口,盘口接口,分时接口{% endblock %}
-{% block og_title %}KLineAPI API 文档 - 行情接口使用指南{% endblock %}
-{% block og_description %}全部 11 个数据接口的完整文档：参数说明、curl 示例、返回结构与错误码。{% endblock %}
+{% block description %}KLineAPI 全部 30 个数据接口文档：实时行情、K线历史、涨停池/跌停池/炸板池、连板天梯、板块成分、板块涨停排名、ETF/可转债行情、交易日历、龙虎榜、北向资金等，含 curl 示例与参数说明。{% endblock %}
+{% block keywords %}API文档,行情接口文档,涨停池,跌停池,连板天梯,板块成分,ETF行情,可转债,交易日历,KLineAPI{% endblock %}
+{% block og_title %}KLineAPI API 文档 - 30 个行情接口使用指南{% endblock %}
+{% block og_description %}全部 30 个数据接口的完整文档：实时行情、K线历史、打板专题、板块成分、ETF/转债、日历、龙虎榜、北向资金等。{% endblock %}
 {% block og_url %}{{ site_url }}/docs{% endblock %}
 {% block canonical %}{{ site_url }}/docs{% endblock %}
 {% block jsonld %}
@@ -12,7 +12,7 @@
   "@context": "https://schema.org",
   "@type": "APIReference",
   "name": "KLineAPI 行情接口文档",
-  "description": "A股实时行情 REST API 参考文档",
+  "description": "A股实时行情 REST API 参考文档，30 个数据接口含打板专题、板块成分、ETF/转债、交易日历等",
   "url": "{{ site_url }}/docs",
   "provider": {"@type": "Organization", "name": "KLineAPI", "url": "{{ site_url }}"}
 }
@@ -32,16 +32,35 @@
     <nav class="docs-toc" aria-label="文档目录">
       <a href="#quickstart">快速开始</a>
       <a href="#auth">认证方式</a>
+      <a href="#endpoints">接口总览（29 个）</a>
       <a href="#quote">实时行情 /v1/quote</a>
       <a href="#batch">批量行情 /v1/batch</a>
       <a href="#top">涨幅排行 /v1/top</a>
       <a href="#index">大盘指数 /v1/index</a>
+      <a href="#kline">K线历史 /v1/kline</a>
       <a href="#limit_up">涨停池 /v1/limit_up</a>
+      <a href="#limit_down">跌停池 /v1/limit_down</a>
+      <a href="#limit_up_break">炸板池 /v1/limit_up_break</a>
+      <a href="#lianban">连板天梯 /v1/lianban</a>
+      <a href="#limit_up_yesterday">昨日涨停 /v1/limit_up_yesterday</a>
       <a href="#orderbook">五档盘口 /v1/orderbook</a>
       <a href="#intraday">分时K线 /v1/intraday</a>
       <a href="#auction">集合竞价 /v1/auction</a>
-      <a href="#market">大盘指数 /v1/market</a>
-      <a href="#board">全市场排行 /v1/board</a>
+      <a href="#board_list">板块列表 /v1/board_list</a>
+      <a href="#sector_detail">板块成分 /v1/sector_detail</a>
+      <a href="#stock_sector">个股板块 /v1/stock_sector</a>
+      <a href="#plates_zt">板块涨停 /v1/plates_zt</a>
+      <a href="#etf">ETF行情 /v1/etf/realtime</a>
+      <a href="#etf_kline">ETF K线 /v1/etf/kline</a>
+      <a href="#bond">转债行情 /v1/bond/realtime</a>
+      <a href="#bond_kline">转债 K线 /v1/bond/kline</a>
+      <a href="#calendar">交易日历 /v1/calendar</a>
+      <a href="#search">代码搜索 /v1/search</a>
+      <a href="#finance">财务数据 /v1/finance</a>
+      <a href="#north">北向资金 /v1/north</a>
+      <a href="#lhb">龙虎榜 /v1/lhb</a>
+      <a href="#market">大盘别名 /v1/market</a>
+      <a href="#board">全市场别名 /v1/board</a>
       <a href="#status">服务状态 /v1/status</a>
       <a href="#errors">错误码</a>
       <a href="#ratelimit">限流说明</a>
@@ -65,6 +84,45 @@
         </table>
       </div>
       <p class="note">所有接口均需要有效 API Key，未携带或无效时返回 <code class="inline-code">401</code>。</p>
+
+      <h2 id="endpoints">接口总览</h2>
+      <p>平台共提供 <strong>29 个数据接口</strong>。免费版开放其中 <strong>10 个基础接口</strong>；专业版/企业版开放全部接口。所有套餐均受每日 + 每分钟调用次数限制（见<a href="#ratelimit">限流说明</a>）。</p>
+      <div class="table-scroll">
+        <table class="doc-table">
+          <thead><tr><th>分类</th><th>接口</th><th>说明</th><th>套餐</th></tr></thead>
+          <tbody>
+            <tr><td rowspan="10">基础行情</td><td><code>/v1/quote</code></td><td>实时行情（含五档盘口）</td><td><span class="badge badge-free">免费</span></td></tr>
+            <tr><td><code>/v1/batch</code></td><td>批量行情</td><td><span class="badge badge-free">免费</span></td></tr>
+            <tr><td><code>/v1/kline</code></td><td>K 线历史（日/周/月/分钟）</td><td><span class="badge badge-free">免费</span></td></tr>
+            <tr><td><code>/v1/search</code></td><td>代码搜索</td><td><span class="badge badge-free">免费</span></td></tr>
+            <tr><td><code>/v1/index</code></td><td>大盘指数</td><td><span class="badge badge-free">免费</span></td></tr>
+            <tr><td><code>/v1/market</code></td><td>大盘指数别名（同 /v1/index）</td><td><span class="badge badge-free">免费</span></td></tr>
+            <tr><td><code>/v1/top</code></td><td>全市场涨幅排行</td><td><span class="badge badge-free">免费</span></td></tr>
+            <tr><td><code>/v1/board</code></td><td>全市场排行别名（同 /v1/top）</td><td><span class="badge badge-free">免费</span></td></tr>
+            <tr><td><code>/v1/calendar</code></td><td>交易日历</td><td><span class="badge badge-free">免费</span></td></tr>
+            <tr><td><code>/v1/status</code></td><td>服务状态</td><td><span class="badge badge-free">免费</span></td></tr>
+            <tr><td rowspan="19">进阶数据</td><td><code>/v1/limit_up</code></td><td>涨停池</td><td><span class="badge badge-pro">专业版+</span></td></tr>
+            <tr><td><code>/v1/limit_down</code></td><td>跌停池</td><td><span class="badge badge-pro">专业版+</span></td></tr>
+            <tr><td><code>/v1/limit_up_break</code></td><td>炸板池</td><td><span class="badge badge-pro">专业版+</span></td></tr>
+            <tr><td><code>/v1/lianban</code></td><td>连板天梯</td><td><span class="badge badge-pro">专业版+</span></td></tr>
+            <tr><td><code>/v1/limit_up_yesterday</code></td><td>昨日涨停（历史存档）</td><td><span class="badge badge-pro">专业版+</span></td></tr>
+            <tr><td><code>/v1/orderbook</code></td><td>五档盘口（独立接口）</td><td><span class="badge badge-pro">专业版+</span></td></tr>
+            <tr><td><code>/v1/intraday</code></td><td>分时 K 线</td><td><span class="badge badge-pro">专业版+</span></td></tr>
+            <tr><td><code>/v1/auction</code></td><td>集合竞价</td><td><span class="badge badge-pro">专业版+</span></td></tr>
+            <tr><td><code>/v1/board_list</code></td><td>板块列表</td><td><span class="badge badge-pro">专业版+</span></td></tr>
+            <tr><td><code>/v1/sector_detail</code></td><td>板块成分股</td><td><span class="badge badge-pro">专业版+</span></td></tr>
+            <tr><td><code>/v1/stock_sector</code></td><td>个股所属板块</td><td><span class="badge badge-pro">专业版+</span></td></tr>
+            <tr><td><code>/v1/plates_zt</code></td><td>板块涨停排名</td><td><span class="badge badge-pro">专业版+</span></td></tr>
+            <tr><td><code>/v1/etf/realtime</code></td><td>ETF 实时行情</td><td><span class="badge badge-pro">专业版+</span></td></tr>
+            <tr><td><code>/v1/etf/kline</code></td><td>ETF K 线</td><td><span class="badge badge-pro">专业版+</span></td></tr>
+            <tr><td><code>/v1/bond/realtime</code></td><td>可转债实时行情</td><td><span class="badge badge-pro">专业版+</span></td></tr>
+            <tr><td><code>/v1/bond/kline</code></td><td>可转债 K 线</td><td><span class="badge badge-pro">专业版+</span></td></tr>
+            <tr><td><code>/v1/finance</code></td><td>财务数据</td><td><span class="badge badge-pro">专业版+</span></td></tr>
+            <tr><td><code>/v1/north</code></td><td>北向资金</td><td><span class="badge badge-pro">专业版+</span></td></tr>
+            <tr><td><code>/v1/lhb</code></td><td>龙虎榜</td><td><span class="badge badge-pro">专业版+</span></td></tr>
+          </tbody>
+        </table>
+      </div>
 
       <h2 id="quote">实时行情 <code class="inline-code">GET /v1/quote</code></h2>
       <p>获取单只 A 股股票的实时行情，包含五档盘口。自主研发行情引擎。</p>
@@ -171,6 +229,199 @@
       <p>返回当前集合竞价状态（9:15-9:25 开盘竞价、14:57-15:00 收盘竞价）及匹配价格。</p>
       <pre class="code-block"><code>curl "https://klineapi.com/v1/auction?code=600519&amp;key=YOUR_API_KEY"</code></pre>
 
+      <h2 id="kline">K 线历史 <code class="inline-code">GET /v1/kline</code></h2>
+      <p>股票历史 K 线数据，支持日/周/月/分钟级，最高 30 年历史。本地历史库优先，响应快。</p>
+      <div class="table-scroll">
+        <table class="doc-table">
+          <thead><tr><th>参数</th><th>类型</th><th>默认</th><th>说明</th></tr></thead>
+          <tbody>
+            <tr><td>code</td><td>string</td><td>—</td><td>股票代码（必填）</td></tr>
+            <tr><td>period</td><td>string</td><td>day</td><td>周期：day/week/month/5min/15min/30min/60min/min1/quarter/year</td></tr>
+            <tr><td>count</td><td>int</td><td>100</td><td>返回条数，最大 800</td></tr>
+            <tr><td>start</td><td>string</td><td>—</td><td>起始日期 YYYY-MM-DD（与 count 互斥）</td></tr>
+            <tr><td>end</td><td>string</td><td>—</td><td>结束日期 YYYY-MM-DD</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <pre class="code-block"><code>curl "https://klineapi.com/v1/kline?code=600519&amp;period=day&amp;count=5&amp;key=YOUR_API_KEY"</code></pre>
+
+      <h2 id="limit_down">跌停池 <code class="inline-code">GET /v1/limit_down</code></h2>
+      <p>按板块规则过滤的跌停股票池（不含 ST 和 N/C 开头次新股）。全市场扫描，缓存 30 秒。</p>
+      <pre class="code-block"><code>curl "https://klineapi.com/v1/limit_down?key=YOUR_API_KEY"</code></pre>
+
+      <h2 id="limit_up_break">炸板池 <code class="inline-code">GET /v1/limit_up_break</code></h2>
+      <p>盘中曾触及涨停价、当前未封住的股票。缓存 30 秒。</p>
+      <pre class="code-block"><code>curl "https://klineapi.com/v1/limit_up_break?key=YOUR_API_KEY"</code></pre>
+
+      <h2 id="lianban">连板天梯 <code class="inline-code">GET /v1/lianban</code></h2>
+      <p>涨停池 + 本地 K 线计算连板数，按连板数降序排列。</p>
+      <div class="table-scroll">
+        <table class="doc-table">
+          <thead><tr><th>参数</th><th>类型</th><th>默认</th><th>说明</th></tr></thead>
+          <tbody>
+            <tr><td>min_lb</td><td>int</td><td>1</td><td>最低连板数筛选，默认 1=全部，如 min_lb=3 只看 3 板以上</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <pre class="code-block"><code>curl "https://klineapi.com/v1/lianban?min_lb=3&amp;key=YOUR_API_KEY"</code></pre>
+
+      <h2 id="limit_up_yesterday">昨日涨停 <code class="inline-code">GET /v1/limit_up_yesterday</code></h2>
+      <p>查询历史交易日涨停池数据。每日 15:05 后自动存档，默认返回最近一次存档。</p>
+      <div class="table-scroll">
+        <table class="doc-table">
+          <thead><tr><th>参数</th><th>类型</th><th>默认</th><th>说明</th></tr></thead>
+          <tbody>
+            <tr><td>date</td><td>string</td><td>最近存档</td><td>日期 YYYY-MM-DD</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <pre class="code-block"><code>curl "https://klineapi.com/v1/limit_up_yesterday?date=2026-08-07&amp;key=YOUR_API_KEY"</code></pre>
+
+      <h2 id="board_list">板块列表 <code class="inline-code">GET /v1/board_list</code></h2>
+      <p>行业/概念/风格板块列表，含成分股数量。数据源：腾讯（行业）+ 同花顺（概念）+ 通达信（风格）。</p>
+      <div class="table-scroll">
+        <table class="doc-table">
+          <thead><tr><th>参数</th><th>类型</th><th>默认</th><th>说明</th></tr></thead>
+          <tbody>
+            <tr><td>type</td><td>string</td><td>1</td><td>1=行业 2=概念 3=风格，逗号分隔如 type=1,2</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <pre class="code-block"><code>curl "https://klineapi.com/v1/board_list?type=1&amp;key=YOUR_API_KEY"</code></pre>
+
+      <h2 id="sector_detail">板块成分 <code class="inline-code">GET /v1/sector_detail</code></h2>
+      <p>指定板块的成分股列表（行业板块全量成分，概念板块成分暂缺）。</p>
+      <div class="table-scroll">
+        <table class="doc-table">
+          <thead><tr><th>参数</th><th>类型</th><th>默认</th><th>说明</th></tr></thead>
+          <tbody>
+            <tr><td>name</td><td>string</td><td>—</td><td>板块名称（必填，需 URL 编码中文）</td></tr>
+            <tr><td>type</td><td>int</td><td>1</td><td>1=行业 2=概念 3=风格</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <pre class="code-block"><code>curl "https://klineapi.com/v1/sector_detail?name=%E5%8C%BB%E7%96%97%E6%9C%8D%E5%8A%A1&amp;type=1&amp;key=YOUR_API_KEY"</code></pre>
+
+      <h2 id="stock_sector">个股板块 <code class="inline-code">GET /v1/stock_sector</code></h2>
+      <p>查询单只股票所属的行业/概念/风格板块。</p>
+      <div class="table-scroll">
+        <table class="doc-table">
+          <thead><tr><th>参数</th><th>类型</th><th>必填</th><th>说明</th></tr></thead>
+          <tbody>
+            <tr><td>code</td><td>string</td><td>是</td><td>股票代码，如 600519</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <pre class="code-block"><code>curl "https://klineapi.com/v1/stock_sector?code=600519&amp;key=YOUR_API_KEY"</code></pre>
+
+      <h2 id="plates_zt">板块涨停排名 <code class="inline-code">GET /v1/plates_zt</code></h2>
+      <p>各板块内涨停股数量和最高连板数排名（行业板块成分齐全，概念暂缺成分）。</p>
+      <div class="table-scroll">
+        <table class="doc-table">
+          <thead><tr><th>参数</th><th>类型</th><th>默认</th><th>说明</th></tr></thead>
+          <tbody>
+            <tr><td>types</td><td>string</td><td>1</td><td>1=行业 2=概念 3=风格</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <pre class="code-block"><code>curl "https://klineapi.com/v1/plates_zt?types=1&amp;key=YOUR_API_KEY"</code></pre>
+
+      <h2 id="etf">ETF 实时行情 <code class="inline-code">GET /v1/etf/realtime</code></h2>
+      <p>ETF 实时行情，沪市基金代码以 5 开头，深市以 1 开头。</p>
+      <div class="table-scroll">
+        <table class="doc-table">
+          <thead><tr><th>参数</th><th>类型</th><th>必填</th><th>说明</th></tr></thead>
+          <tbody>
+            <tr><td>code</td><td>string</td><td>是</td><td>ETF 代码，如 510300（沪深300ETF）</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <pre class="code-block"><code>curl "https://klineapi.com/v1/etf/realtime?code=510300&amp;key=YOUR_API_KEY"</code></pre>
+
+      <h2 id="etf_kline">ETF K 线 <code class="inline-code">GET /v1/etf/kline</code></h2>
+      <p>ETF 历史 K 线，优先本地库。</p>
+      <div class="table-scroll">
+        <table class="doc-table">
+          <thead><tr><th>参数</th><th>类型</th><th>默认</th><th>说明</th></tr></thead>
+          <tbody>
+            <tr><td>code</td><td>string</td><td>—</td><td>ETF 代码（必填）</td></tr>
+            <tr><td>period</td><td>int</td><td>9</td><td>周期：9=日K 5=周K 6=月K</td></tr>
+            <tr><td>count</td><td>int</td><td>100</td><td>返回条数，最大 800</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <pre class="code-block"><code>curl "https://klineapi.com/v1/etf/kline?code=510300&amp;period=9&amp;count=5&amp;key=YOUR_API_KEY"</code></pre>
+
+      <h2 id="bond">可转债实时行情 <code class="inline-code">GET /v1/bond/realtime</code></h2>
+      <p>可转债实时行情，价格已除以 100 修正为实际价格。</p>
+      <div class="table-scroll">
+        <table class="doc-table">
+          <thead><tr><th>参数</th><th>类型</th><th>必填</th><th>说明</th></tr></thead>
+          <tbody>
+            <tr><td>code</td><td>string</td><td>是</td><td>转债代码，如 127045（牧原转债）</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <pre class="code-block"><code>curl "https://klineapi.com/v1/bond/realtime?code=127045&amp;key=YOUR_API_KEY"</code></pre>
+
+      <h2 id="bond_kline">可转债 K 线 <code class="inline-code">GET /v1/bond/kline</code></h2>
+      <p>可转债历史 K 线，优先本地库。</p>
+      <div class="table-scroll">
+        <table class="doc-table">
+          <thead><tr><th>参数</th><th>类型</th><th>默认</th><th>说明</th></tr></thead>
+          <tbody>
+            <tr><td>code</td><td>string</td><td>—</td><td>转债代码（必填）</td></tr>
+            <tr><td>period</td><td>int</td><td>9</td><td>周期：9=日K</td></tr>
+            <tr><td>count</td><td>int</td><td>100</td><td>返回条数，最大 800</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <pre class="code-block"><code>curl "https://klineapi.com/v1/bond/kline?code=127045&amp;count=5&amp;key=YOUR_API_KEY"</code></pre>
+
+      <h2 id="calendar">交易日历 <code class="inline-code">GET /v1/calendar</code></h2>
+      <p>A 股交易日历，取自本地历史 K 线库。</p>
+      <div class="table-scroll">
+        <table class="doc-table">
+          <thead><tr><th>参数</th><th>类型</th><th>默认</th><th>说明</th></tr></thead>
+          <tbody>
+            <tr><td>count</td><td>int</td><td>20</td><td>返回最近交易日数量，最大 120</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <pre class="code-block"><code>curl "https://klineapi.com/v1/calendar?count=10&amp;key=YOUR_API_KEY"</code></pre>
+
+      <h2 id="search">代码搜索 <code class="inline-code">GET /v1/search</code></h2>
+      <p>按股票名称或代码搜索，返回匹配的 A 股标的。</p>
+      <div class="table-scroll">
+        <table class="doc-table">
+          <thead><tr><th>参数</th><th>类型</th><th>必填</th><th>说明</th></tr></thead>
+          <tbody>
+            <tr><td>q</td><td>string</td><td>是</td><td>搜索关键词，如"茅台"或"600519"</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <pre class="code-block"><code>curl "https://klineapi.com/v1/search?q=%E8%8C%85%E5%8F%B0&amp;key=YOUR_API_KEY"</code></pre>
+
+      <h2 id="finance">财务数据 <code class="inline-code">GET /v1/finance</code></h2>
+      <p>个股财务数据（市值、PE、PB、ROE 等），首次请求拉取缓存 6 小时。</p>
+      <pre class="code-block"><code>curl "https://klineapi.com/v1/finance?code=600519&amp;key=YOUR_API_KEY"</code></pre>
+
+      <h2 id="north">北向资金 <code class="inline-code">GET /v1/north</code></h2>
+      <p>北向资金（沪股通+深股通）当日及历史流入流出数据。</p>
+      <pre class="code-block"><code>curl "https://klineapi.com/v1/north?key=YOUR_API_KEY"</code></pre>
+
+      <h2 id="lhb">龙虎榜 <code class="inline-code">GET /v1/lhb</code></h2>
+      <p>龙虎榜数据，支持指定日期查询。</p>
+      <div class="table-scroll">
+        <table class="doc-table">
+          <thead><tr><th>参数</th><th>类型</th><th>默认</th><th>说明</th></tr></thead>
+          <tbody>
+            <tr><td>date</td><td>string</td><td>最近</td><td>日期 YYYY-MM-DD</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <pre class="code-block"><code>curl "https://klineapi.com/v1/lhb?date=2026-08-07&amp;key=YOUR_API_KEY"</code></pre>
+
       <h2 id="market">大盘指数别名 <code class="inline-code">GET /v1/market</code></h2>
       <p><code class="inline-code">/v1/market</code> 与 <code class="inline-code">/v1/index</code> 返回相同数据。</p>
 
@@ -189,6 +440,7 @@
             <tr><td>200</td><td>0</td><td>请求成功</td></tr>
             <tr><td>400</td><td>400</td><td>参数缺失或格式错误</td></tr>
             <tr><td>401</td><td>401</td><td>缺少或无效的 API Key</td></tr>
+            <tr><td>403</td><td>403</td><td>免费版无权调用该接口（需专业版/企业版）</td></tr>
             <tr><td>404</td><td>404</td><td>未找到对应代码的行情</td></tr>
             <tr><td>429</td><td>429</td><td>超过限流配额</td></tr>
             <tr><td>500</td><td>500</td><td>服务器内部错误</td></tr>
@@ -198,18 +450,18 @@
       </div>
 
       <h2 id="ratelimit">限流说明</h2>
-      <p>限流基于内存计数器，按「每日 + 每分钟」双维度统计：</p>
+      <p>限流基于内存计数器，按「每日 + 每分钟」双维度统计。接口开放数量：免费版 <strong>10 个基础接口</strong>，专业版/企业版 <strong>全部 29 个接口</strong>。</p>
       <div class="table-scroll">
         <table class="doc-table">
-          <thead><tr><th>套餐</th><th>每日限额</th><th>每分钟限额</th></tr></thead>
+          <thead><tr><th>套餐</th><th>每日限额</th><th>每分钟限额</th><th>可用接口</th></tr></thead>
           <tbody>
-            <tr><td>免费版</td><td>100 次</td><td>10 次</td></tr>
-            <tr><td>专业版</td><td>10,000 次</td><td>100 次</td></tr>
-            <tr><td>企业版</td><td>100,000 次</td><td>不限</td></tr>
+            <tr><td>免费版</td><td>100 次</td><td>10 次</td><td>10 个基础接口</td></tr>
+            <tr><td>专业版</td><td>10,000 次</td><td>100 次</td><td>全部 29 个接口</td></tr>
+            <tr><td>企业版</td><td>100,000 次</td><td>不限</td><td>全部 29 个接口</td></tr>
           </tbody>
         </table>
       </div>
-      <p class="note">超过限额返回 <code class="inline-code">429</code>，并附带具体限制说明。服务器时间为 Asia/Shanghai 时区。</p>
+      <p class="note">超过限额返回 <code class="inline-code">429</code>，并附带具体限制说明；免费版调用未开放接口返回 <code class="inline-code">403</code>。服务器时间为 Asia/Shanghai 时区。</p>
     </div>
   </div>
 </section>

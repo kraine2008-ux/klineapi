@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+{% block title %}管理后台 - KLineAPI{% endblock %}
+{% block content %}
+<section class="page-hero">
+  <div class="container">
+    <h1>管理<span class="grad-text">后台</span></h1>
+    <p>用户注册与订单消费总览，掌握平台运营情况。</p>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+
+    <div class="panel-head admin-tabs">
+      <div class="admin-tab-group">
+        <a class="admin-tab {{ 'active' if tab == 'overview' }}" href="/admin?tab=overview">📊 概览</a>
+        <a class="admin-tab {{ 'active' if tab == 'users' }}" href="/admin?tab=users">👥 用户列表</a>
+        <a class="admin-tab {{ 'active' if tab == 'orders' }}" href="/admin?tab=orders">🧾 订单记录</a>
+      </div>
+    </div>
+
+    {% if tab == 'overview' %}
+    <div class="stat-grid">
+      <div class="stat-card">
+        <p class="stat-label">总用户数</p>
+        <p class="stat-value">{{ total_users }}</p>
+        <p class="stat-hint">今日新增 {{ today_users }} 人</p>
+      </div>
+      <div class="stat-card">
+        <p class="stat-label">付费用户</p>
+        <p class="stat-value">{{ paid_users }}</p>
+        <p class="stat-hint">非免费套餐</p>
+      </div>
+      <div class="stat-card">
+        <p class="stat-label">累计订单</p>
+        <p class="stat-value">{{ total_orders }}</p>
+        <p class="stat-hint">待支付 {{ pending_orders }} · 已支付 {{ paid_orders }}</p>
+      </div>
+      <div class="stat-card">
+        <p class="stat-label">累计收入</p>
+        <p class="stat-value">¥{{ '%.0f'|format(revenue) }}</p>
+        <p class="stat-hint">今日订单 {{ today_orders }} 笔 · ¥{{ '%.0f'|format(today_revenue) }}</p>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <h2>🆕 最新注册用户</h2>
+        <a href="/admin?tab=users">查看全部 →</a>
+      </div>
+      <div class="table-scroll">
+        <table class="doc-table">
+          <thead><tr><th>ID</th><th>用户名</th><th>邮箱</th><th>套餐</th><th>API Key</th><th>注册时间</th><th>操作</th></tr></thead>
+          <tbody>
+            {% for u in users[:10] %}
+            <tr>
+              <td>{{ u['id'] }}</td>
+              <td>{{ u['username'] }}{% if u['is_admin'] %} <span class="badge-admin">管理员</span>{% endif %}</td>
+              <td>{{ u['email'] }}</td>
+              <td>{{ tiers[u['plan']]['name'] if u['plan'] in tiers else u['plan'] }}</td>
+              <td>{{ u['key_count'] }}</td>
+              <td>{{ u['created_at'] }}</td>
+              <td><a href="/admin/user/{{ u['id'] }}">详情</a></td>
+            </tr>
+            {% else %}
+            <tr><td colspan="7" class="empty-cell">暂无用户</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <h2>🧾 最新订单</h2>
+        <a href="/admin?tab=orders">查看全部 →</a>
+      </div>
+      <div class="table-scroll">
+        <table class="doc-table">
+          <thead><tr><th>订单ID</th><th>用户</th><th>套餐</th><th>金额</th><th>状态</th><th>下单时间</th><th>支付时间</th></tr></thead>
+          <tbody>
+            {% for o in orders[:10] %}
+            <tr>
+              <td>#{{ o['id'] }}</td>
+              <td><a href="/admin/user/{{ o['user_id'] }}">{{ o['username'] }}</a></td>
+              <td>{{ tiers[o['tier']]['name'] if o['tier'] in tiers else o['tier'] }}</td>
+              <td>¥{{ '%.2f'|format(o['amount']) }}</td>
+              <td><span class="order-status {{ o['status'] }}">{{ '已支付' if o['status'] == 'paid' else ('待支付' if o['status'] == 'pending' else o['status']) }}</span></td>
+              <td>{{ o['created_at'] }}</td>
+              <td>{{ o['paid_at'] or '—' }}</td>
+            </tr>
+            {% else %}
+            <tr><td colspan="7" class="empty-cell">暂无订单</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    {% elif tab == 'users' %}
+    <div class="panel">
+      <div class="panel-head">
+        <h2>👥 用户列表</h2>
+        <form method="get" action="/admin" class="admin-search">
+          <input type="hidden" name="tab" value="users">
+          <input type="text" name="q" value="{{ q }}" placeholder="搜索用户名 / 邮箱">
+          <button class="btn btn-sm btn-primary" type="submit">搜索</button>
+        </form>
+      </div>
+      <div class="table-scroll">
+        <table class="doc-table">
+          <thead><tr><th>ID</th><th>用户名</th><th>邮箱</th><th>套餐</th><th>到期时间</th><th>API Key</th><th>注册时间</th><th>操作</th></tr></thead>
+          <tbody>
+            {% for u in users %}
+            <tr>
+              <td>{{ u['id'] }}</td>
+              <td>{{ u['username'] }}{% if u['is_admin'] %} <span class="badge-admin">管理员</span>{% endif %}</td>
+              <td>{{ u['email'] }}</td>
+              <td>{{ tiers[u['plan']]['name'] if u['plan'] in tiers else u['plan'] }}</td>
+              <td>{{ u['plan_expire'] or '—' }}</td>
+              <td>{{ u['key_count'] }}</td>
+              <td>{{ u['created_at'] }}</td>
+              <td><a href="/admin/user/{{ u['id'] }}">详情</a></td>
+            </tr>
+            {% else %}
+            <tr><td colspan="8" class="empty-cell">{% if q %}没有匹配「{{ q }}」的用户{% else %}暂无用户{% endif %}</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% if users|length >= 100 %}<p class="note">仅显示最近 100 条，请用搜索缩小范围</p>{% endif %}
+    </div>
+
+    {% elif tab == 'orders' %}
+    <div class="panel">
+      <div class="panel-head">
+        <h2>🧾 订单记录</h2>
+        <form method="get" action="/admin" class="admin-search">
+          <input type="hidden" name="tab" value="orders">
+          <input type="text" name="q" value="{{ q }}" placeholder="搜索用户名 / 邮箱">
+          <select name="status">
+            <option value="" {{ 'selected' if not status }}>全部状态</option>
+            <option value="paid" {{ 'selected' if status == 'paid' }}>已支付</option>
+            <option value="pending" {{ 'selected' if status == 'pending' }}>待支付</option>
+          </select>
+          <button class="btn btn-sm btn-primary" type="submit">筛选</button>
+        </form>
+      </div>
+      <div class="table-scroll">
+        <table class="doc-table">
+          <thead><tr><th>订单ID</th><th>用户</th><th>邮箱</th><th>套餐</th><th>金额</th><th>状态</th><th>下单时间</th><th>支付时间</th><th>操作</th></tr></thead>
+          <tbody>
+            {% for o in orders %}
+            <tr>
+              <td>#{{ o['id'] }}</td>
+              <td><a href="/admin/user/{{ o['user_id'] }}">{{ o['username'] }}</a></td>
+              <td>{{ o['user_email'] }}</td>
+              <td>{{ tiers[o['tier']]['name'] if o['tier'] in tiers else o['tier'] }}</td>
+              <td>¥{{ '%.2f'|format(o['amount']) }}</td>
+              <td><span class="order-status {{ o['status'] }}">{{ '已支付' if o['status'] == 'paid' else ('待支付' if o['status'] == 'pending' else o['status']) }}</span></td>
+              <td>{{ o['created_at'] }}</td>
+              <td>{{ o['paid_at'] or '—' }}</td>
+              <td><a href="/admin/user/{{ o['user_id'] }}">用户</a></td>
+            </tr>
+            {% else %}
+            <tr><td colspan="9" class="empty-cell">{% if q or status %}没有匹配的订单{% else %}暂无订单{% endif %}</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% if orders|length >= 100 %}<p class="note">仅显示最近 100 条，请用搜索缩小范围</p>{% endif %}
+    </div>
+    {% endif %}
+
+  </div>
+</section>
+{% endblock %}

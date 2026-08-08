@@ -36,6 +36,10 @@
       <div class="hero-cta">
         <a class="btn btn-lg btn-primary" href="/register">免费获取 API Key</a>
         <a class="btn btn-lg btn-ghost" href="/docs">查看文档</a>
+        <a class="btn btn-lg btn-ghost" href="https://github.com/kraine2008-ux/klineapi" target="_blank" rel="noopener">
+          <svg viewBox="0 0 16 16" width="18" height="18" fill="currentColor" aria-hidden="true" style="vertical-align:-3px;margin-right:4px"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>
+          GitHub
+        </a>
       </div>
       <ul class="hero-points">
         <li>
@@ -189,7 +193,7 @@
   <div class="container">
     <div class="section-head">
       <h2>简单透明的价格</h2>
-      <p>免费版包含全部接口，按用量升级，无隐藏费用。</p>
+      <p>免费版开放 10 个基础接口，按用量升级，无隐藏费用。</p>
     </div>
     <div class="pricing-grid">
       {% for key, tier in tiers.items() %}
@@ -200,8 +204,13 @@
         <ul class="price-features">
           <li>每日 {{ tier['day'] }} 次调用</li>
           <li>每分钟 {{ tier['min'] if tier['min'] else '不限' }} 次</li>
-          <li>全部 11 个数据接口</li>
-          <li>五档盘口 + 分时K线</li>
+          {% if key == 'free' %}
+          <li>开放 10 个基础接口</li>
+          <li>实时行情 + K线 + 指数</li>
+          {% else %}
+          <li>开放全部 29 个数据接口</li>
+          <li>涨停池 + 龙虎榜 + 板块</li>
+          {% endif %}
         </ul>
         <a class="btn {{ 'btn-primary' if key == 'pro' else 'btn-outline' }}" href="/subscribe/{{ key }}">立即订阅</a>
       </article>

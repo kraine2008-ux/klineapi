@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block title %}用户详情 - {{ user['username'] }} - KLineAPI{% endblock %}
+{% block content %}
+<section class="page-hero">
+  <div class="container">
+    <h1>用户<span class="grad-text">详情</span></h1>
+    <p><a href="/admin?tab=users">← 返回用户列表</a></p>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+
+    <div class="panel">
+      <div class="panel-head">
+        <h2>👤 {{ user['username'] }}{% if user['is_admin'] %} <span class="badge-admin">管理员</span>{% endif %}</h2>
+        <span class="plan-badge">{{ tiers[user['plan']]['name'] if user['plan'] in tiers else user['plan'] }}</span>
+      </div>
+      <div class="table-scroll">
+        <table class="doc-table">
+          <tbody>
+            <tr><th style="width:140px">ID</th><td>{{ user['id'] }}</td></tr>
+            <tr><th>邮箱</th><td>{{ user['email'] }}</td></tr>
+            <tr><th>套餐</th><td>{{ tiers[user['plan']]['name'] if user['plan'] in tiers else user['plan'] }}（到期：{{ user['plan_expire'] or '永久/无' }}）</td></tr>
+            <tr><th>注册时间</th><td>{{ user['created_at'] }}</td></tr>
+            <tr><th>今日调用</th><td>{{ today_calls }} 次</td></tr>
+            <tr><th>累计调用</th><td>{{ total_calls }} 次</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><h2>🔑 API Keys（{{ keys|length }}）</h2></div>
+      <div class="table-scroll">
+        <table class="doc-table">
+          <thead><tr><th>API Key</th><th>创建时间</th></tr></thead>
+          <tbody>
+            {% for k in keys %}
+            <tr><td><code>{{ k['api_key'] }}</code></td><td>{{ k['created_at'] }}</td></tr>
+            {% else %}
+            <tr><td colspan="2" class="empty-cell">该用户暂无 API Key</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><h2>🧾 订单记录（{{ orders|length }}）</h2></div>
+      <div class="table-scroll">
+        <table class="doc-table">
+          <thead><tr><th>订单ID</th><th>套餐</th><th>金额</th><th>状态</th><th>下单时间</th><th>支付时间</th></tr></thead>
+          <tbody>
+            {% for o in orders %}
+            <tr>
+              <td>#{{ o['id'] }}</td>
+              <td>{{ tiers[o['tier']]['name'] if o['tier'] in tiers else o['tier'] }}</td>
+              <td>¥{{ '%.2f'|format(o['amount']) }}</td>
+              <td><span class="order-status {{ o['status'] }}">{{ '已支付' if o['status'] == 'paid' else ('待支付' if o['status'] == 'pending' else o['status']) }}</span></td>
+              <td>{{ o['created_at'] }}</td>
+              <td>{{ o['paid_at'] or '—' }}</td>
+            </tr>
+            {% else %}
+            <tr><td colspan="6" class="empty-cell">该用户暂无订单</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><h2>📡 最近调用记录</h2></div>
+      <div class="table-scroll">
+        <table class="doc-table">
+          <thead><tr><th>接口</th><th>代码</th><th>状态</th><th>IP</th><th>时间</th></tr></thead>
+          <tbody>
+            {% for log in recent_logs %}
+            <tr>
+              <td><code>{{ log['endpoint'] }}</code></td>
+              <td>{{ log['code'] or '—' }}</td>
+              <td>{{ log['status'] }}</td>
+              <td>{{ log['ip'] or '—' }}</td>
+              <td>{{ log['created_at'] }}</td>
+            </tr>
+            {% else %}
+            <tr><td colspan="5" class="empty-cell">暂无调用记录</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</section>
+{% endblock %}

@@ -14,6 +14,7 @@ import sqlite3
 import struct
 import threading
 import time
+import urllib.parse
 import zlib
 from datetime import datetime, timedelta
 from functools import wraps
@@ -36,6 +37,46 @@ DEFAULT_PORT = 5860
 TDX_BASE = os.environ.get('TDX_API_URL', 'http://127.0.0.1:8001')
 TDX_TIMEOUT = 8
 
+# ---------------------------------------------------------------- XORPay 支付
+XORPAY_AID = os.environ.get('XORPAY_AID', '706732')
+XORPAY_SECRET = os.environ.get('XORPAY_SECRET', '0643fa7b7d12467cab394bde815ab181')
+XORPAY_API = 'https://xorpay.com/api/pay/{aid}'
+XORPAY_QR = 'https://xorpay.com/qr?data='
+
+
+def xorpay_sign(*parts):
+    """XorPay 签名: 各字段按序拼接 + app secret, 整体 MD5 小写"""
+    return hashlib.md5(''.join(parts).encode('utf-8')).hexdigest().lower()
+
+
+def xorpay_create_order(order, user, pay_type='native'):
+    """调用 XorPay 下单, 返回 (ok, qr_url, aoid, errmsg)"""
+    name = TIERS[order['tier']]['name'] + ' - KLineAPI'
+    price = '%.2f' % order['amount']
+    order_id = str(order['id'])
+    notify_url = SITE_URL + '/payment/notify'
+    sign = xorpay_sign(name, pay_type, price, order_id, notify_url, XORPAY_SECRET)
+    data = {
+        'name': name,
+        'pay_type': pay_type,
+        'price': price,
+        'order_id': order_id,
+        'order_uid': user['email'] or user['username'],
+        'notify_url': notify_url,
+        'more': 'klineapi:' + order_id,
+        'expire': '7200',
+        'sign': sign,
+    }
+    try:
+        resp = requests.post(XORPAY_API.format(aid=XORPAY_AID), data=data, timeout=10)
+        j = resp.json()
+    except Exception as e:
+        return False, None, None, '支付网关请求失败: %s' % e
+    if j.get('status') == 'ok':
+        qr = j['info'].get('qr', '')
+        return True, qr, j.get('aoid', ''), ''
+    return False, None, None, 'XorPay: ' + str(j.get('status', 'unknown error'))
+
 
 def tdx_get(endpoint, params=None):
     """调用 tdx_api 服务, 失败返回 None (上层自动降级)"""
@@ -54,6 +95,15 @@ TIERS = {
     'pro': {'name': '专业版', 'price': 49, 'day': 10000, 'min': 100, 'period': '月'},
     'enterprise': {'name': '企业版', 'price': 299, 'day': 100000, 'min': None, 'period': '月'},
 }
+
+# 免费版可用接口白名单（其余接口需专业版/企业版）
+# 共 29 个数据接口：免费开放 10 个基础接口，付费开放全部
+FREE_ENDPOINTS = {
+    '/v1/quote', '/v1/batch', '/v1/top', '/v1/index', '/v1/market',
+    '/v1/board', '/v1/status', '/v1/kline', '/v1/search', '/v1/calendar',
+}
+FREE_ENDPOINT_COUNT = len(FREE_ENDPOINTS)
+TOTAL_ENDPOINT_COUNT = 29
 
 INDEX_LIST = [
     ('sh000001', '上证指数'),
@@ -163,6 +213,15 @@ def init_db():
         CREATE INDEX IF NOT EXISTS idx_call_logs_user ON call_logs(user_id, created_at);
         CREATE INDEX IF NOT EXISTS idx_api_keys_user ON api_keys(user_id);
         ''')
+    # 迁移: orders 增加 XorPay 字段
+    with get_db() as conn:
+        cols = [r[1] for r in conn.execute('PRAGMA table_info(orders)').fetchall()]
+        if 'aoid' not in cols:
+            conn.execute('ALTER TABLE orders ADD COLUMN aoid TEXT')
+        if 'pay_url' not in cols:
+            conn.execute('ALTER TABLE orders ADD COLUMN pay_url TEXT')
+        if 'pay_type' not in cols:
+            conn.execute("ALTER TABLE orders ADD COLUMN pay_type TEXT DEFAULT 'native'")
 def _bootstrap_admin():
     user = os.environ.get('KLINE_ADMIN_USER') or 'admin'
     pw = os.environ.get('KLINE_ADMIN_PASS') or 'admin123'
@@ -584,6 +643,11 @@ def api_required(fn):
         user, key, err = _authenticate()
         if err:
             return jsonify(err), err['code']
+        # 免费版仅开放基础接口，其余接口需付费套餐
+        if user['plan'] == 'free' and request.path not in FREE_ENDPOINTS:
+            err = api_error('免费版仅开放 ' + str(FREE_ENDPOINT_COUNT) + ' 个基础接口，该接口需专业版或企业版套餐，请升级后使用', 403)
+            log_call(user['user_id'], key, request.path, request.args.get('code'), 403)
+            return jsonify(err), 403
         kwargs['api_user'] = user
         kwargs['api_key'] = key
         try:
@@ -815,11 +879,161 @@ def v1_lhb(api_user, api_key):
 @app.route('/v1/board_list')
 @api_required
 def v1_board_list(api_user, api_key):
-    """板块行情 (tdx_api)"""
-    btype = (request.args.get('type') or 'industry').strip()
-    data = tdx_get('ak/sector_industry' if btype == 'industry' else 'ak/sector_concept')
+    """板块列表 (tdx_api, 1=行业 2=概念 3=风格)"""
+    btype = (request.args.get('type') or '1').strip()
+    data = tdx_get('sector_list', {'types': btype})
     if data is None:
         return api_error('板块数据不可用', 502)
+    return api_success(data)
+
+
+# ============ A档: 打板专题 / 板块成分 / ETF/转债 / 日历 (forward tdx_api) ============
+
+@app.route('/v1/limit_down')
+@api_required
+def v1_limit_down(api_user, api_key):
+    """跌停板池 [tdx_api 全市场扫描]"""
+    data = tdx_get('limit_down')
+    if data is None:
+        return api_error('跌停池数据不可用 (tdx_api 未就绪)', 502)
+    return api_success(data)
+
+
+@app.route('/v1/limit_up_break')
+@api_required
+def v1_limit_up_break(api_user, api_key):
+    """炸板池 [tdx_api 盘中曾触涨停价当前未封]"""
+    data = tdx_get('limit_up_break')
+    if data is None:
+        return api_error('炸板池数据不可用', 502)
+    return api_success(data)
+
+
+@app.route('/v1/lianban')
+@api_required
+def v1_lianban(api_user, api_key):
+    """连板天梯 [tdx_api 涨停池+本地K线算连板]"""
+    min_lb = (request.args.get('min_lb') or '1').strip()
+    data = tdx_get('lianban', {'min_lb': min_lb})
+    if data is None:
+        return api_error('连板天梯数据不可用', 502)
+    return api_success(data)
+
+
+@app.route('/v1/limit_up_yesterday')
+@api_required
+def v1_limit_up_yesterday(api_user, api_key):
+    """昨日涨停 [tdx_api 每日存档]"""
+    date = (request.args.get('date') or '').strip()
+    params = {'date': date} if date else {}
+    data = tdx_get('limit_up_yesterday', params)
+    if data is None:
+        return api_error('昨日涨停数据不可用', 502)
+    return api_success(data)
+
+
+@app.route('/v1/sector_detail')
+@api_required
+def v1_sector_detail(api_user, api_key):
+    """板块成分股 [tdx_api]"""
+    name = (request.args.get('name') or '').strip()
+    if not name:
+        return api_error('缺少参数 name', 400)
+    stype = (request.args.get('type') or '1').strip()
+    data = tdx_get('sector_detail', {'name': name, 'type': stype})
+    if data is None:
+        return api_error('板块成分数据不可用', 502)
+    return api_success(data)
+
+
+@app.route('/v1/stock_sector')
+@api_required
+def v1_stock_sector(api_user, api_key):
+    """个股所属板块 [tdx_api]"""
+    code = (request.args.get('code') or '').strip()
+    if not code:
+        return api_error('缺少参数 code', 400)
+    data = tdx_get('stock_sector', {'code': code})
+    if data is None:
+        return api_error('个股板块数据不可用', 502)
+    return api_success(data)
+
+
+@app.route('/v1/plates_zt')
+@api_required
+def v1_plates_zt(api_user, api_key):
+    """板块涨停排名 [tdx_api 板块成分∩涨停池]"""
+    types = (request.args.get('types') or '1').strip()
+    data = tdx_get('plates_zt', {'types': types})
+    if data is None:
+        return api_error('板块涨停排名数据不可用', 502)
+    return api_success(data)
+
+
+@app.route('/v1/etf/realtime')
+@api_required
+def v1_etf_realtime(api_user, api_key):
+    """ETF实时行情 [tdx_api]"""
+    code = (request.args.get('code') or '').strip()
+    if not code:
+        return api_error('缺少参数 code', 400)
+    data = tdx_get('etf_realtime', {'code': code})
+    if data is None:
+        return api_error('ETF行情数据不可用', 502)
+    return api_success(data)
+
+
+@app.route('/v1/etf/kline')
+@api_required
+def v1_etf_kline(api_user, api_key):
+    """ETF K线 [tdx_api 本地库优先]"""
+    code = (request.args.get('code') or '').strip()
+    if not code:
+        return api_error('缺少参数 code', 400)
+    period = (request.args.get('period') or '9').strip()
+    count = (request.args.get('count') or '100').strip()
+    data = tdx_get('etf_kline', {'code': code, 'period': period, 'count': count})
+    if data is None:
+        return api_error('ETF K线数据不可用', 502)
+    return api_success(data)
+
+
+@app.route('/v1/bond/realtime')
+@api_required
+def v1_bond_realtime(api_user, api_key):
+    """可转债实时行情 [tdx_api]"""
+    code = (request.args.get('code') or '').strip()
+    if not code:
+        return api_error('缺少参数 code', 400)
+    data = tdx_get('bond_realtime', {'code': code})
+    if data is None:
+        return api_error('可转债行情数据不可用', 502)
+    return api_success(data)
+
+
+@app.route('/v1/bond/kline')
+@api_required
+def v1_bond_kline(api_user, api_key):
+    """可转债 K线 [tdx_api 本地库优先]"""
+    code = (request.args.get('code') or '').strip()
+    if not code:
+        return api_error('缺少参数 code', 400)
+    period = (request.args.get('period') or '9').strip()
+    count = (request.args.get('count') or '100').strip()
+    data = tdx_get('bond_kline', {'code': code, 'period': period, 'count': count})
+    if data is None:
+        return api_error('可转债K线数据不可用', 502)
+    return api_success(data)
+
+
+@app.route('/v1/calendar')
+@api_required
+def v1_calendar(api_user, api_key):
+    """交易日历 [tdx_api 本地库]"""
+    count = (request.args.get('count') or '20').strip()
+    data = tdx_get('calendar', {'count': count})
+    if data is None:
+        return api_error('交易日历数据不可用', 502)
     return api_success(data)
 
 
@@ -909,6 +1123,89 @@ def generate_key():
     return redirect(url_for('dashboard'))
 
 
+# ---------------------------------------------------------------- 管理后台
+def admin_required(fn):
+    @wraps(fn)
+    def wrapper(*args, **kwargs):
+        if not session.get('user_id'):
+            flash('请先登录', 'error')
+            return redirect(url_for('login', next=request.path))
+        user = _current_user_row()
+        if not user or not user['is_admin']:
+            abort(403)
+        return fn(*args, **kwargs)
+    return wrapper
+
+
+@app.route('/admin')
+@admin_required
+def admin():
+    tab = request.args.get('tab', 'overview')
+    q = (request.args.get('q') or '').strip()
+    status = (request.args.get('status') or '').strip()
+    with get_db() as conn:
+        total_users = conn.execute('SELECT COUNT(*) c FROM users').fetchone()['c']
+        today_users = conn.execute('SELECT COUNT(*) c FROM users WHERE created_at LIKE ?',
+                                   (today_str() + '%',)).fetchone()['c']
+        paid_users = conn.execute("SELECT COUNT(*) c FROM users WHERE plan != 'free'").fetchone()['c']
+        total_orders = conn.execute('SELECT COUNT(*) c FROM orders').fetchone()['c']
+        pending_orders = conn.execute("SELECT COUNT(*) c FROM orders WHERE status = 'pending'").fetchone()['c']
+        paid_orders = conn.execute("SELECT COUNT(*) c FROM orders WHERE status = 'paid'").fetchone()['c']
+        revenue = conn.execute("SELECT COALESCE(SUM(amount), 0) s FROM orders WHERE status = 'paid'").fetchone()['s']
+        today_orders = conn.execute('SELECT COUNT(*) c FROM orders WHERE created_at LIKE ?',
+                                    (today_str() + '%',)).fetchone()['c']
+        today_revenue = conn.execute("SELECT COALESCE(SUM(amount), 0) s FROM orders WHERE status = 'paid' AND paid_at LIKE ?",
+                                     (today_str() + '%',)).fetchone()['s']
+        # 用户列表（含 API Key 数）
+        if q:
+            users = conn.execute(
+                '''SELECT u.*, (SELECT COUNT(*) FROM api_keys k WHERE k.user_id = u.id) AS key_count
+                   FROM users u WHERE u.username LIKE ? OR u.email LIKE ?
+                   ORDER BY u.id DESC LIMIT 100''',
+                ('%' + q + '%', '%' + q + '%')).fetchall()
+        else:
+            users = conn.execute(
+                '''SELECT u.*, (SELECT COUNT(*) FROM api_keys k WHERE k.user_id = u.id) AS key_count
+                   FROM users u ORDER BY u.id DESC LIMIT 100''').fetchall()
+        # 订单列表（含用户名）
+        sql = 'SELECT o.*, u.username, u.email AS user_email FROM orders o JOIN users u ON u.id = o.user_id'
+        conds, args = [], []
+        if q:
+            conds.append('(u.username LIKE ? OR u.email LIKE ?)')
+            args += ['%' + q + '%', '%' + q + '%']
+        if status:
+            conds.append('o.status = ?')
+            args.append(status)
+        if conds:
+            sql += ' WHERE ' + ' AND '.join(conds)
+        sql += ' ORDER BY o.id DESC LIMIT 100'
+        orders = conn.execute(sql, args).fetchall()
+    return render_template('admin.html', page_title='管理后台', tab=tab, q=q, status=status,
+                           total_users=total_users, today_users=today_users, paid_users=paid_users,
+                           total_orders=total_orders, pending_orders=pending_orders, paid_orders=paid_orders,
+                           revenue=revenue, today_orders=today_orders, today_revenue=today_revenue,
+                           users=users, orders=orders)
+
+
+@app.route('/admin/user/<int:uid>')
+@admin_required
+def admin_user(uid):
+    with get_db() as conn:
+        user = conn.execute('SELECT * FROM users WHERE id = ?', (uid,)).fetchone()
+        if not user:
+            abort(404)
+        keys = conn.execute('SELECT * FROM api_keys WHERE user_id = ? ORDER BY id DESC', (uid,)).fetchall()
+        orders = conn.execute('SELECT * FROM orders WHERE user_id = ? ORDER BY id DESC', (uid,)).fetchall()
+        total_calls = conn.execute('SELECT COUNT(*) c FROM call_logs WHERE user_id = ?', (uid,)).fetchone()['c']
+        today_calls = conn.execute('SELECT COUNT(*) c FROM call_logs WHERE user_id = ? AND created_at LIKE ?',
+                                   (uid, today_str() + '%')).fetchone()['c']
+        recent_logs = conn.execute(
+            'SELECT * FROM call_logs WHERE user_id = ? ORDER BY id DESC LIMIT 20', (uid,)).fetchall()
+    return render_template('admin_user.html', page_title='用户详情', user=user, keys=keys,
+                           orders=orders, total_calls=total_calls, today_calls=today_calls,
+                           recent_logs=recent_logs)
+
+
 # ---------------------------------------------------------------- 套餐与订单
 @app.route('/pricing')
 def pricing():
@@ -920,29 +1217,91 @@ def pricing():
 def subscribe(tier):
     if tier not in TIERS:
         abort(404)
+    if tier == 'free':
+        flash('免费版无需订阅，注册即自动开通', 'info')
+        return redirect(url_for('dashboard'))
     user = _current_user_row()
-    token = hashlib.md5((str(user['id']) + tier + now_str()).encode('utf-8')).hexdigest()
+    pay_type = request.args.get('type', 'alipay')
+    if pay_type not in ('native', 'alipay'):
+        pay_type = 'alipay'
     with get_db() as conn:
         pending = conn.execute(
             'SELECT * FROM orders WHERE user_id = ? AND tier = ? AND status = ?',
             (user['id'], tier, 'pending')).fetchone()
         if not pending:
+            token = hashlib.md5((str(user['id']) + tier + now_str()).encode('utf-8')).hexdigest()
             cur = conn.execute(
                 'INSERT INTO orders (user_id, tier, amount, status, qr_token, created_at) VALUES (?, ?, ?, ?, ?, ?)',
                 (user['id'], tier, TIERS[tier]['price'], 'pending', token, now_str()))
             pending = conn.execute('SELECT * FROM orders WHERE id = ?', (cur.lastrowid,)).fetchone()
-    render_qr_svg(pending['qr_token'])
+        # 已有二维码直接复用, 否则调 XorPay 下单
+        if not pending['pay_url'] or pending['pay_type'] != pay_type:
+            ok, qr, aoid, err = xorpay_create_order(pending, user, pay_type)
+            if ok:
+                conn.execute('UPDATE orders SET pay_url = ?, aoid = ?, pay_type = ? WHERE id = ?',
+                             (qr, aoid, pay_type, pending['id']))
+                pending = conn.execute('SELECT * FROM orders WHERE id = ?', (pending['id'],)).fetchone()
+            else:
+                flash('支付网关下单失败: ' + err, 'error')
     return render_template('subscribe.html', page_title='套餐订阅', tier=tier, order=pending)
+
+
 @app.route('/qr/<token>')
-@login_required
 def qr_image(token):
-    user = _current_user_row()
+    """输出 XorPay 二维码图片(重定向到 xorpay 二维码服务)"""
     with get_db() as conn:
         order = conn.execute('SELECT * FROM orders WHERE qr_token = ?', (token,)).fetchone()
-    if not order or order['user_id'] != user['id']:
+    if not order or not order['pay_url']:
         abort(404)
-    svg = render_qr_svg(token)
-    return Response(svg, mimetype='image/svg+xml')
+    return redirect(XORPAY_QR + urllib.parse.quote(order['pay_url'], safe=''))
+
+
+@app.route('/payment/notify', methods=['POST'])
+def payment_notify():
+    """XorPay 支付回调: 验签后激活套餐"""
+    aoid = (request.form.get('aoid') or '').strip()
+    order_id = (request.form.get('order_id') or '').strip()
+    pay_price = (request.form.get('pay_price') or '').strip()
+    pay_time = (request.form.get('pay_time') or '').strip()
+    sign = (request.form.get('sign') or '').strip()
+    if not (aoid and order_id and pay_price and pay_time and sign):
+        return 'missing_argument', 400
+    calc = xorpay_sign(aoid, order_id, pay_price, pay_time, XORPAY_SECRET)
+    if calc != sign.lower():
+        return 'sign_error', 400
+    try:
+        oid = int(order_id)
+    except ValueError:
+        return 'order_error', 400
+    with get_db() as conn:
+        order = conn.execute('SELECT * FROM orders WHERE id = ?', (oid,)).fetchone()
+        if not order:
+            return 'not_exist', 404
+        if order['status'] == 'paid':
+            return 'ok'
+        # 金额校验
+        if abs(float(pay_price) - order['amount']) > 0.01:
+            return 'price_error', 400
+        expire = None
+        if order['tier'] in ('pro', 'enterprise'):
+            expire = (datetime.now(TZ) + timedelta(days=30)).strftime('%Y-%m-%d %H:%M:%S')
+        conn.execute('UPDATE orders SET status = ?, paid_at = ?, aoid = ? WHERE id = ?',
+                     ('paid', now_str(), aoid, oid))
+        conn.execute('UPDATE users SET plan = ?, plan_expire = ? WHERE id = ?',
+                     (order['tier'], expire, order['user_id']))
+    return 'ok'
+
+
+@app.route('/payment/status/<int:oid>')
+@login_required
+def payment_status(oid):
+    """前端轮询订单状态"""
+    user = _current_user_row()
+    with get_db() as conn:
+        order = conn.execute('SELECT * FROM orders WHERE id = ?', (oid,)).fetchone()
+    if not order or order['user_id'] != user['id']:
+        return jsonify({'status': 'not_found'})
+    return jsonify({'status': order['status'], 'paid_at': order['paid_at']})
 
 
 def qr_exists(token):
