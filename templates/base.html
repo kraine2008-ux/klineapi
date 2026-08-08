@@ -73,6 +73,14 @@
       {% if current_user['is_admin'] %}
       <a href="/admin">管理后台</a>
       {% endif %}
+      <span class="nav-divider nav-mobile-only" aria-hidden="true"></span>
+      <form class="nav-mobile-only nav-logout-form" method="post" action="/logout">
+        <button class="nav-link-btn" type="submit">退出登录</button>
+      </form>
+      {% else %}
+      <span class="nav-divider nav-mobile-only" aria-hidden="true"></span>
+      <a class="nav-mobile-only" href="/login">登录</a>
+      <a class="nav-mobile-only" href="/register">免费注册</a>
       {% endif %}
     </nav>
     <div class="header-actions">
@@ -151,5 +159,19 @@
     </p>
   </div>
 </footer>
+<script>
+  (function () {
+    var navToggle = document.getElementById('navToggle');
+    var siteNav = document.getElementById('siteNav');
+    if (!navToggle || !siteNav) return;
+    siteNav.addEventListener('click', function (e) {
+      if (e.target.closest('a, button')) {
+        siteNav.classList.remove('open');
+        navToggle.classList.remove('open');
+        navToggle.setAttribute('aria-expanded', 'false');
+      }
+    });
+  })();
+</script>
 </body>
 </html>
